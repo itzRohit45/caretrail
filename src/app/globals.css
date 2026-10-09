@@ -25,6 +25,9 @@
   --verified: #13693a;
   --verified-soft: #e3f1e8;
   --verified-rule: #a3cfb2;
+  /* Chart series: validated with the dataviz palette checker (band, chroma, CVD, contrast) on #fffefc. */
+  --chart-1: #2f5fc4;
+  --chart-2: #c2417f;
   --shadow-tint: 40 34 24;
 }
 
@@ -52,6 +55,8 @@
     --verified: #74d19c;
     --verified-soft: #12291c;
     --verified-rule: #285a3c;
+    --chart-1: #5f86e6;
+    --chart-2: #d9649f;
     --shadow-tint: 0 0 0;
   }
 }
@@ -99,6 +104,8 @@
   --color-verified: var(--verified);
   --color-verified-soft: var(--verified-soft);
   --color-verified-rule: var(--verified-rule);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
   --color-transparent: transparent;
   --color-current: currentColor;
 

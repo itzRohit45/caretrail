@@ -8,6 +8,9 @@ import { buttonClass } from "@/components/ui/button";
 import { EmergencyPreview } from "@/components/patient/emergency-preview";
 import { RecordRow } from "@/components/records/recent-records";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RangeLine } from "@/components/ui/range-line";
+import { loadTrends, type TrendPoint } from "@/lib/records/trends";
+import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -29,6 +32,10 @@ export default async function HomePage() {
       .order("created_at", { ascending: false })
       .limit(6),
   ]);
+  const latest = (await loadTrends(supabase, patient.id))
+    .filter((t) => t.key !== "BP" && t.points.length > 0)
+    .map((t) => ({ trend: t, point: t.points.at(-1) as TrendPoint }))
+    .slice(0, 3);
   const waiting = (docs ?? []).filter((d) => d.extraction_status === "needs_review" || d.extraction_status === "failed");
 
   const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
@@ -69,13 +76,40 @@ export default async function HomePage() {
           </section>
         ) : null}
 
+        {latest.length ? (
+          <section aria-labelledby="latest-title">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 id="latest-title" className="text-title font-bold">Latest results</h2>
+              <Link href="/records/trends" className="inline-flex min-h-11 items-center gap-1 font-semibold text-primary hover:underline">
+                See trends <CaretRight aria-hidden className="size-4" />
+              </Link>
+            </div>
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {latest.map(({ trend, point }) => (
+                <li key={trend.key}>
+                  <Link href={`/records/${point.documentId}`} className="block rounded-card border border-rule bg-sheet p-4 transition-colors duration-150 hover:border-rule-strong">
+                    <p className="flex items-baseline justify-between gap-2">
+                      <span className="font-bold">{trend.title}</span>
+                      <span className="text-meta text-ink-2">{formatDate(point.date)}</span>
+                    </p>
+                    <p className="mt-1 font-serif text-display font-medium tabular-nums">
+                      {point.value} <span className="font-sans text-body text-ink-2">{trend.unit}</span>
+                    </p>
+                    {trend.range ? <RangeLine value={point.value} low={trend.range.low} high={trend.range.high} unit={trend.unit} className="mt-2" /> : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         <section aria-labelledby="records-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-7">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 id="records-title" className="text-title font-bold">Your records</h2>
               <p className="mt-1 text-ink-2">Prescriptions, lab reports and hospital papers you have added.</p>
             </div>
-            <Link href="/upload" className={buttonClass("primary", "dense", "shrink-0")}>
+            <Link href="/upload" className={buttonClass("primary", "dense", "shrink-0 self-start")}>
               <Plus aria-hidden weight="bold" className="size-5" />
               Add a record
             </Link>
@@ -86,6 +120,11 @@ export default async function HomePage() {
                 <RecordRow key={d.id} doc={d} />
               ))}
             </ul>
+          ) : null}
+          {docs?.length ? (
+            <Link href="/records" className="mt-3 inline-flex min-h-11 items-center gap-1 font-semibold text-primary hover:underline">
+              See all records <CaretRight aria-hidden className="size-4" />
+            </Link>
           ) : (
             <div className="mt-5">
               <EmptyState

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, UserCircle } from "@phosphor-icons/react";
+import { House, Files, UserCircle } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 
 // Items appear here only once their screen works end to end.
 const items = [
   { href: "/home", label: "Home", Icon: House },
+  { href: "/records", label: "Records", Icon: Files },
   { href: "/profile", label: "Profile", Icon: UserCircle },
 ] as const;
 

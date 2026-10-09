@@ -58,8 +58,8 @@ export function SavedFacts({
       ) : null}
       {labs.length ? (
         <Group Icon={Flask} title="Test results">
-          {labs.map((l) => {
-            const r = rangeFor(l.test_code);
+          {labs.filter((l) => l.test_code !== "BP_DIA").map((l) => {
+            const r = l.test_code === "BP_SYS" ? undefined : rangeFor(l.test_code);
             const v = l.value_normalised ?? l.value;
             return (
               <li key={l.id} className="grid gap-2 py-3.5 sm:grid-cols-[1fr_12rem] sm:items-center sm:gap-6">
@@ -69,7 +69,7 @@ export function SavedFacts({
                     {l.verified_by_patient ? <Badge tone="patient-verified" /> : null}
                   </p>
                   <p className="text-ink-2">
-                    <span className="font-serif text-lead font-medium text-ink tabular-nums">{l.value_text}</span> {l.unit}
+                    <span className="font-serif text-lead font-medium text-ink tabular-nums">{l.test_code === "BP_SYS" ? l.value_text : (l.value ?? l.value_text)}</span> {l.unit}
                     <span className="text-meta"> on {formatDate(l.test_date)}</span>
                   </p>
                 </div>
