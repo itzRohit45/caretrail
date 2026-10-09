@@ -297,10 +297,6 @@ create policy patients_insert on public.patients for insert to authenticated
   with check (owner_user_id = (select auth.uid()));
 create policy patients_update on public.patients for update to authenticated
   using (owner_user_id = (select auth.uid())) with check (owner_user_id = (select auth.uid()));
--- The owner may edit profile fields only; token hashes and the demo flag are server-written.
-revoke update on public.patients from authenticated;
-grant update (name, dob, sex, blood_group, emergency_contact_name, emergency_contact_phone, emergency_contact_email)
-  on public.patients to authenticated;
 
 -- Owner has full CRUD on these, always scoped to their own patients.
 do $$
@@ -322,8 +318,6 @@ create policy share_links_select on public.share_links for select to authenticat
 create policy share_links_insert on public.share_links for insert to authenticated with check (public.owns_patient(patient_id));
 create policy share_links_update on public.share_links for update to authenticated
   using (public.owns_patient(patient_id)) with check (public.owns_patient(patient_id));
-revoke update, delete on public.share_links from authenticated;
-grant update (revoked_at) on public.share_links to authenticated;
 
 -- Revocation is final: once set, revoked_at can never be cleared or moved.
 create function public.keep_revocation_final()
@@ -361,7 +355,6 @@ begin
   foreach t in array array['generics', 'brand_generic_map', 'drug_interactions', 'test_validity', 'lab_reference_ranges'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('create policy %I on public.%I for select to anon, authenticated using (true)', t || '_read', t);
-    execute format('revoke insert, update, delete, truncate on public.%I from anon, authenticated', t);
   end loop;
 end;
 $$;
@@ -370,8 +363,6 @@ $$;
 -- Insert-only audit log, enforced in the database for every role
 -- ---------------------------------------------------------------------------
 
-revoke update, delete, truncate on public.access_logs from anon, authenticated, service_role;
-revoke insert on public.access_logs from anon, authenticated;
 
 create function public.forbid_access_log_change()
 returns trigger
@@ -389,6 +380,40 @@ create trigger access_logs_no_update_delete
 create trigger access_logs_no_truncate
   before truncate on public.access_logs
   for each statement execute function public.forbid_access_log_change();
+
+
+-- ---------------------------------------------------------------------------
+-- Grants: nothing is reachable through the Data API unless granted here.
+-- RLS policies above then limit which rows each role sees.
+-- ---------------------------------------------------------------------------
+
+revoke all on all tables in schema public from anon, authenticated;
+revoke all on all sequences in schema public from anon, authenticated;
+grant usage on schema public to anon, authenticated, service_role;
+
+-- Patients: the owner edits profile fields only; token hashes and the demo flag are server-written.
+grant select, insert on public.patients to authenticated;
+grant update (name, dob, sex, blood_group, emergency_contact_name, emergency_contact_phone, emergency_contact_email)
+  on public.patients to authenticated;
+
+grant select, insert, update, delete on public.documents, public.medications, public.lab_results,
+  public.conditions, public.allergies to authenticated;
+
+-- Share links: create, list, and revoke (revoked_at only). Never deleted.
+grant select, insert on public.share_links to authenticated;
+grant update (revoked_at) on public.share_links to authenticated;
+
+-- Written only by token routes on the server.
+grant select on public.access_logs, public.doctor_notes, public.viewer_sessions to authenticated;
+
+-- Reference data.
+grant select on public.generics, public.brand_generic_map, public.drug_interactions,
+  public.test_validity, public.lab_reference_ranges to anon, authenticated;
+
+-- Server (service role): everything, except rewriting history.
+grant all on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
+revoke update, delete, truncate on public.access_logs from service_role;
 
 revoke execute on function public.rate_limit_hit(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.rate_limit_hit(text, integer, integer) to service_role;

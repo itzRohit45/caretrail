@@ -1,0 +1,186 @@
+@import "tailwindcss";
+
+/* Tokens: see docs/DESIGN.md. Tailwind's default scales are cleared so only these exist. */
+
+:root {
+  color-scheme: light;
+  --paper: #f5f6f8;
+  --sheet: #fdfdfe;
+  --sheet-sunk: #eef0f3;
+  --ink: #16181d;
+  --ink-2: #454c5a;
+  --ink-3: #5b6372;
+  --rule: #d8dce3;
+  --rule-strong: #aeb5c1;
+  --primary: #2340a8;
+  --primary-strong: #1a3189;
+  --primary-soft: #e7ebf9;
+  --on-primary: #fdfdfe;
+  --severe: #b42318;
+  --severe-soft: #fdecea;
+  --severe-rule: #f1b5ae;
+  --verify: #8a4b00;
+  --verify-soft: #fff3dc;
+  --verify-rule: #e9c27a;
+  --verified: #116b3a;
+  --verified-soft: #e5f3eb;
+  --verified-rule: #9fd2b3;
+  --shadow-tint: 22 24 29;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #0f1115;
+    --sheet: #171a20;
+    --sheet-sunk: #1d2027;
+    --ink: #eceef2;
+    --ink-2: #b8bfcb;
+    --ink-3: #9ca4b2;
+    --rule: #2b3039;
+    --rule-strong: #454c59;
+    --primary: #8ea6ff;
+    --primary-strong: #b3c2ff;
+    --primary-soft: #1c2547;
+    --on-primary: #0f1115;
+    --severe: #ff8a80;
+    --severe-soft: #3a1714;
+    --severe-rule: #6b2a24;
+    --verify: #f5b54a;
+    --verify-soft: #33260f;
+    --verify-rule: #5e4618;
+    --verified: #6fd39a;
+    --verified-soft: #10291c;
+    --verified-rule: #245238;
+    --shadow-tint: 0 0 0;
+  }
+}
+
+/* The emergency card ignores the theme: bright ER lighting, maximum contrast. */
+.emergency-surface {
+  color-scheme: light;
+  --paper: #ffffff;
+  --sheet: #ffffff;
+  --sheet-sunk: #f1f2f4;
+  --ink: #0b0c0e;
+  --ink-2: #2b2f36;
+  --ink-3: #3f4550;
+  --rule: #c9ced6;
+  --rule-strong: #6b7280;
+  --primary: #1a3189;
+  --primary-strong: #142770;
+  --primary-soft: #e7ebf9;
+  --on-primary: #ffffff;
+  --severe: #a11b12;
+  --severe-soft: #fdecea;
+  --severe-rule: #e59b93;
+}
+
+@theme inline {
+  --color-*: initial;
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-sheet-sunk: var(--sheet-sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-severe: var(--severe);
+  --color-severe-soft: var(--severe-soft);
+  --color-severe-rule: var(--severe-rule);
+  --color-verify: var(--verify);
+  --color-verify-soft: var(--verify-soft);
+  --color-verify-rule: var(--verify-rule);
+  --color-verified: var(--verified);
+  --color-verified-soft: var(--verified-soft);
+  --color-verified-rule: var(--verified-rule);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-*: initial;
+  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-atkinson-mono), ui-monospace, monospace;
+
+  --text-*: initial;
+  --text-meta: 0.875rem;
+  --text-meta--line-height: 1.35;
+  --text-dense: 1rem;
+  --text-dense--line-height: 1.45;
+  --text-body: 1.125rem;
+  --text-body--line-height: 1.55;
+  --text-lead: 1.25rem;
+  --text-lead--line-height: 1.45;
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.25;
+  --text-title--letter-spacing: -0.02em;
+  --text-display: 2rem;
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.02em;
+  --text-date: 2.75rem;
+  --text-date--line-height: 1;
+  --text-date--letter-spacing: -0.02em;
+  --text-emergency: 3rem;
+  --text-emergency--line-height: 1.05;
+  --text-emergency--letter-spacing: -0.02em;
+
+  --radius-*: initial;
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-pill: 9999px;
+
+  --shadow-*: initial;
+  --shadow-sheet: 0 1px 2px rgb(var(--shadow-tint) / 0.06), 0 2px 10px rgb(var(--shadow-tint) / 0.06);
+  --shadow-lift: 0 10px 28px rgb(var(--shadow-tint) / 0.14), 0 2px 6px rgb(var(--shadow-tint) / 0.08);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--primary-soft);
+    color: var(--ink);
+  }
+  input,
+  textarea,
+  select {
+    caret-color: var(--primary);
+  }
+  :focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+  }
+  a {
+    text-underline-offset: 3px;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0ms !important;
+      animation-duration: 0ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}
