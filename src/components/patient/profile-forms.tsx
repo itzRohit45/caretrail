@@ -5,6 +5,7 @@ import { useFormAction } from "@/components/ui/use-form-action";
 import { CheckCircle, PencilSimple, Trash, WarningOctagon } from "@phosphor-icons/react";
 import { addAllergy, deleteAllergy, saveProfile, updateAllergy, type FormState } from "@/app/(patient)/profile/actions";
 import { BLOOD_GROUPS, SEVERITIES } from "@/lib/schemas/profile";
+import { ChoiceTiles } from "@/components/ui/choice-tiles";
 import { Field, inputClass, describedBy } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { buttonClass } from "@/components/ui/button";
@@ -42,40 +43,59 @@ export function ProfileForm({ patient }: { patient: Row<"patients"> }) {
   const { state, onSubmit, pending } = useFormAction(saveProfile, {} as FormState);
   return (
     <form onSubmit={onSubmit} className="space-y-6" noValidate>
-      <fieldset className="space-y-5">
-        <legend className="mb-4 text-title font-bold">About you</legend>
-        <TextField f={{ id: "name", label: "Full name", autoComplete: "name" }} state={state} initial={patient.name} />
-        <TextField f={{ id: "dob", label: "Date of birth", type: "date", autoComplete: "bday", optional: true }} state={state} initial={patient.dob} />
-        <div className="grid grid-cols-2 gap-4">
-          <Field id="sex" label="Sex" optional error={state.fields?.sex}>
-            <select id="sex" name="sex" defaultValue={patient.sex ?? ""} className={inputClass}>
-              <option value="">Not set</option>
-              <option value="female">Female</option>
-              <option value="male">Male</option>
-              <option value="other">Other</option>
-            </select>
-          </Field>
-          <Field id="blood_group" label="Blood group" error={state.fields?.blood_group}>
-            <select id="blood_group" name="blood_group" defaultValue={patient.blood_group ?? ""} className={inputClass}>
-              <option value="">Not sure</option>
-              {BLOOD_GROUPS.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
-          </Field>
+      <section aria-labelledby="about-title" className="rounded-card border border-rule bg-sheet p-5 shadow-card sm:p-7">
+        <h2 id="about-title" className="text-title font-bold">About you</h2>
+        <div className="mt-5 space-y-6">
+          <div className="grid gap-5 sm:grid-cols-[3fr_2fr]">
+            <TextField f={{ id: "name", label: "Full name", autoComplete: "name" }} state={state} initial={patient.name} />
+            <TextField f={{ id: "dob", label: "Date of birth", type: "date", autoComplete: "bday", optional: true }} state={state} initial={patient.dob} />
+          </div>
+          <ChoiceTiles
+            name="sex"
+            legend="Sex"
+            columns="grid-cols-3"
+            defaultValue={patient.sex}
+            error={state.fields?.sex}
+            options={[
+              { value: "female", label: "Female" },
+              { value: "male", label: "Male" },
+              { value: "other", label: "Other" },
+            ]}
+          />
+          <ChoiceTiles
+            name="blood_group"
+            legend="Blood group"
+            hint="Check an old lab report or blood donation card if you are not sure."
+            columns="grid-cols-3 sm:grid-cols-9"
+            defaultValue={patient.blood_group}
+            error={state.fields?.blood_group}
+            options={[
+              ...BLOOD_GROUPS.map((g) => ({
+                value: g,
+                label: <span className="text-lead font-extrabold">{g}</span>,
+                srLabel: g.endsWith("+") ? " positive" : " negative",
+              })),
+              { value: "", label: <span className="text-dense">Not sure</span> },
+            ]}
+          />
         </div>
-      </fieldset>
-      <fieldset className="space-y-5">
-        <legend className="mb-1 text-title font-bold">Emergency contact</legend>
-        <p className="text-ink-2">Shown on your emergency card so a hospital can call them.</p>
-        <TextField f={{ id: "emergency_contact_name", label: "Name", autoComplete: "off", optional: true }} state={state} initial={patient.emergency_contact_name} />
-        <TextField f={{ id: "emergency_contact_phone", label: "Phone", type: "tel", autoComplete: "off", optional: true }} state={state} initial={patient.emergency_contact_phone} />
-        <TextField f={{ id: "emergency_contact_email", label: "Email", type: "email", autoComplete: "off", optional: true, helper: "Alerts about emergency access go here." }} state={state} initial={patient.emergency_contact_email} />
-      </fieldset>
-      <div className="flex flex-wrap items-center gap-4">
-        <SubmitButton pending={pending} pendingLabel="Saving...">Save details</SubmitButton>
-        <Status state={state} />
-      </div>
+      </section>
+
+      <section aria-labelledby="contact-title" className="rounded-card border border-rule bg-sheet p-5 shadow-card sm:p-7">
+        <h2 id="contact-title" className="text-title font-bold">Emergency contact</h2>
+        <p className="mt-1 text-ink-2">Shown on your emergency card so a hospital can call them.</p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <TextField f={{ id: "emergency_contact_name", label: "Name", autoComplete: "off", optional: true }} state={state} initial={patient.emergency_contact_name} />
+          <TextField f={{ id: "emergency_contact_phone", label: "Phone", type: "tel", autoComplete: "off", optional: true }} state={state} initial={patient.emergency_contact_phone} />
+          <div className="sm:col-span-2">
+            <TextField f={{ id: "emergency_contact_email", label: "Email", type: "email", autoComplete: "off", optional: true, helper: "Alerts about emergency access go here." }} state={state} initial={patient.emergency_contact_email} />
+          </div>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-rule pt-6">
+          <SubmitButton pending={pending} pendingLabel="Saving...">Save details</SubmitButton>
+          <Status state={state} />
+        </div>
+      </section>
     </form>
   );
 }
@@ -89,18 +109,21 @@ function AllergyFields({ state, initial, idPrefix }: { state: FormState; initial
         <input id={id("substance")} name="substance" defaultValue={initial?.substance ?? ""}
           aria-invalid={Boolean(err.substance)} aria-describedby={describedBy(id("substance"), "help", err.substance)} className={inputClass} />
       </Field>
-      <fieldset className="space-y-2">
-        <legend className="font-semibold">How serious is it?</legend>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {SEVERITIES.map((s) => (
-            <label key={s} className="flex min-h-13 cursor-pointer items-center justify-center gap-2 rounded-control border border-rule-strong bg-sheet font-semibold capitalize has-checked:border-primary has-checked:bg-primary-soft has-checked:text-primary">
-              <input type="radio" name="severity" value={s} defaultChecked={initial?.severity === s} className="size-4 accent-primary" />
-              {s}
-            </label>
-          ))}
-        </div>
-        {err.severity ? <p className="font-semibold text-severe">{err.severity}</p> : null}
-      </fieldset>
+      <ChoiceTiles
+        name="severity"
+        legend="How serious is it?"
+        columns="grid-cols-3"
+        defaultValue={initial?.severity}
+        error={err.severity}
+        options={SEVERITIES.map((v) => ({
+          value: v,
+          label: v === "severe" ? (
+            <span className="inline-flex items-center gap-1.5"><WarningOctagon aria-hidden weight="fill" className="size-5" />Severe</span>
+          ) : (
+            <span className="capitalize">{v}</span>
+          ),
+        }))}
+      />
       <Field id={id("reaction")} label="What happens" optional error={err.reaction}>
         <input id={id("reaction")} name="reaction" defaultValue={initial?.reaction ?? ""} className={inputClass} />
       </Field>

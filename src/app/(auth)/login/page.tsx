@@ -11,7 +11,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const returning = typeof next === "string";
   return (
     <div className="space-y-6">
-      <h1 className="text-display font-bold">Log in</h1>
+      <h1 className="font-serif text-display font-medium md:text-headline">Welcome <em className="italic">back</em></h1>
       {returning ? (
         <Alert tone="info" title="Please log in again">
           For your safety you were logged out. You will go straight back to where you were.

@@ -18,7 +18,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 860 } });
 
   await page.goto(`${BASE}/`);
-  await page.screenshot({ path: `${shots}/landing-desktop.png` });
+  await page.screenshot({ path: `${shots}/landing-desktop.png`, caret: "initial" });
 
   await page.goto(`${BASE}/home`);
   check("logged-out /home redirects to login with next", page.url().includes("/login?next=%2Fhome"));
@@ -32,10 +32,10 @@ try {
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL("**/home");
   check("signup lands on home with greeting", await seen(page.getByRole("heading", { name: /Smoke$/ })));
-  await page.screenshot({ path: `${shots}/home-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${shots}/home-desktop.png`, fullPage: true, caret: "initial" });
 
   await page.goto(`${BASE}/profile`);
-  await page.getByLabel("Blood group").selectOption("O+");
+  await page.getByText("O+", { exact: true }).click();
   await page.getByLabel("Phone").fill("call me");
   await page.getByRole("button", { name: "Save details" }).click();
   check("invalid phone shows inline error", await seen(page.getByText(/Enter a phone number/)));
@@ -47,7 +47,7 @@ try {
   check("profile saves", true);
 
   await page.getByLabel("Allergic to").fill("Penicillin");
-  await page.getByRole("radio", { name: "severe" }).check();
+  await page.locator("form", { hasText: "Add allergy" }).getByText("Severe", { exact: true }).click();
   await page.getByLabel("What happens").fill("Rash");
   await page.getByRole("button", { name: "Add allergy" }).click();
   await page.getByText("Added Penicillin.").waitFor();
@@ -58,14 +58,14 @@ try {
   await page.locator("li").getByRole("button", { name: "Save" }).click();
   await page.getByText("Rash and swelling").waitFor();
   check("allergy edited", true);
-  await page.screenshot({ path: `${shots}/profile-desktop.png`, fullPage: true });
+  await page.screenshot({ path: `${shots}/profile-desktop.png`, fullPage: true, caret: "initial" });
 
   for (const [path, name] of [["/home", "home"], ["/profile", "profile"]]) {
     const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     await m.addCookies(await page.context().cookies());
     const p = await m.newPage();
     await p.goto(`${BASE}${path}`);
-    await p.screenshot({ path: `${shots}/${name}-mobile.png`, fullPage: true });
+    await p.screenshot({ path: `${shots}/${name}-mobile.png`, fullPage: true, caret: "initial" });
     await m.close();
   }
 
@@ -83,8 +83,9 @@ try {
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL("**/profile");
   check("login returns to the page you were on", page.url().endsWith("/profile"));
-  check("saved blood group persisted", (await page.getByLabel("Blood group").inputValue()) === "O+");
+  check("saved blood group persisted", await page.getByRole("radio", { name: "O+ positive" }).isChecked());
 } catch (err) {
+  await browser.contexts()[0]?.pages()[0]?.screenshot({ path: `${shots}/failure.png`, fullPage: true, caret: "initial" }).catch(() => {});
   check(`unexpected error: ${err.message.split("\n")[0]}`, false);
 } finally {
   await browser.close();

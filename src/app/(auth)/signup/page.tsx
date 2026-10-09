@@ -8,7 +8,7 @@ export default function SignupPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-display font-bold">Create your account</h1>
+        <h1 className="font-serif text-display font-medium md:text-headline">Create your <em className="italic">account</em></h1>
         <p className="text-ink-2">Your records stay private to you. Only you decide who sees them.</p>
       </div>
       <SignupForm />

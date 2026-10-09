@@ -5,7 +5,7 @@ type Tone = "severe" | "caution" | "info";
 
 const tones: Record<Tone, { cls: string; Icon: typeof Info; iconCls: string }> = {
   severe: { cls: "bg-severe-soft border-severe-rule", Icon: WarningOctagon, iconCls: "text-severe" },
-  caution: { cls: "bg-sheet border-rule-strong", Icon: Warning, iconCls: "text-ink" },
+  caution: { cls: "bg-sheet border-rule", Icon: Warning, iconCls: "text-ink" },
   info: { cls: "bg-primary-soft border-transparent", Icon: Info, iconCls: "text-primary" },
 };
 

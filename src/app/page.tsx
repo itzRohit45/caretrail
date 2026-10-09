@@ -1,31 +1,113 @@
+import Image from "next/image";
 import Link from "next/link";
+import { FileMagnifyingGlass, Pill, HandPalm } from "@phosphor-icons/react/ssr";
 import { Wordmark } from "@/components/wordmark";
 import { buttonClass } from "@/components/ui/button";
+import { SampleBrief, SampleLabCard, SampleViewingPill, SampleWarningCard } from "@/components/marketing/samples";
+import portrait from "../../public/images/patient-portrait.jpg";
+
+const features = [
+  {
+    Icon: FileMagnifyingGlass,
+    title: "Every fact shows its source",
+    body: "A doctor taps any line of the summary and the original report opens, with the exact words highlighted.",
+  },
+  {
+    Icon: Pill,
+    title: "Medicines checked across all your doctors",
+    body: "The same medicine under two brand names, risky combinations and allergy clashes are flagged, with who prescribed what.",
+  },
+  {
+    Icon: HandPalm,
+    title: "Sharing you can see and stop",
+    body: "Links end on their own. You see who is viewing right now, and you can end access in one tap.",
+  },
+];
 
 export default function Landing() {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-5xl flex-col px-5 py-6">
-      <header className="flex h-12 items-center">
+    <div className="flex min-h-dvh flex-col">
+      <header className="mx-auto flex h-18 w-full max-w-6xl items-center justify-between px-5 sm:px-6">
         <Wordmark />
-      </header>
-      <main className="flex flex-1 flex-col justify-center py-12">
-        <h1 className="max-w-[18ch] text-display font-extrabold md:text-emergency">
-          Every report you own, on one timeline your doctor can trust.
-        </h1>
-        <p className="mt-5 max-w-[46ch] text-lead text-ink-2">
-          CareTrail reads your prescriptions and lab reports, catches medicine mix-ups, and shares only what you choose.
-        </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link href="/signup" className={buttonClass("primary")}>
-            Create account
-          </Link>
-          <Link href="/login" className={buttonClass("secondary")}>
+        <nav aria-label="Account" className="flex items-center gap-2">
+          <Link href="/login" className={buttonClass("quiet", "dense")}>
             Log in
           </Link>
-        </div>
+          <span className="hidden sm:block">
+            <Link href="/signup" className={buttonClass("primary", "dense")}>
+              Create account
+            </Link>
+          </span>
+        </nav>
+      </header>
+
+      <main className="flex-1">
+        <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pt-6 pb-16 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pt-10 lg:pb-24">
+          <div>
+            <h1 className="max-w-[14ch] font-serif text-headline font-medium sm:text-hero">
+              Your health history, <em className="italic">in the right hands.</em>
+            </h1>
+            <p className="mt-6 max-w-[42ch] text-lead text-ink-2">
+              CareTrail reads your prescriptions and lab reports, catches medicine mix-ups across doctors, and shares only what you choose.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href="/signup" className={buttonClass("primary")}>
+                Create free account
+              </Link>
+              <Link href="/login" className={buttonClass("secondary")}>
+                Log in
+              </Link>
+            </div>
+          </div>
+
+          <figure className="relative mx-auto w-full max-w-lg lg:mr-0">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-media bg-sheet-sunk">
+              <Image src={portrait} alt="An older man smiling at the camera" fill priority placeholder="blur" sizes="(min-width: 1024px) 32rem, 92vw" className="object-cover object-[50%_30%]" />
+              <SampleViewingPill className="absolute top-4 left-4 shadow-float" />
+            </div>
+            <div className="relative -mt-28 space-y-3 px-4 sm:px-8 lg:absolute lg:inset-0 lg:mt-0 lg:px-0">
+              <SampleLabCard className="shadow-float lg:absolute lg:top-[38%] lg:-left-14 lg:w-80" />
+              <SampleWarningCard className="shadow-float lg:absolute lg:-right-8 lg:bottom-8 lg:w-80" />
+            </div>
+            <figcaption className="mt-4 text-meta text-ink-3 lg:mt-5">
+              Sample record with simulated names. Photo by Wilfred Sequeira on Unsplash.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section aria-labelledby="how-title" className="border-t border-rule bg-sheet">
+          <div className="mx-auto grid max-w-6xl gap-12 px-5 py-16 sm:px-6 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:py-24">
+            <div>
+              <h2 id="how-title" className="max-w-[18ch] font-serif text-display font-medium md:text-headline">
+                A new doctor understands you in <em className="italic">thirty seconds.</em>
+              </h2>
+              <ul className="mt-10 space-y-8">
+                {features.map(({ Icon, title, body }) => (
+                  <li key={title} className="flex gap-4">
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-pill bg-primary-soft text-primary">
+                      <Icon aria-hidden weight="duotone" className="size-6" />
+                    </span>
+                    <div>
+                      <h3 className="text-lead font-bold">{title}</h3>
+                      <p className="mt-1 max-w-[46ch] text-ink-2">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="lg:pt-4">
+              <SampleBrief />
+              <p className="mt-3 text-meta text-ink-3">What a doctor sees from a diabetes-only link. Simulated patient.</p>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="border-t border-rule pt-4 text-dense text-ink-2">
-        CareTrail is an information tool, not medical advice. All demo data is simulated.
+
+      <footer className="border-t border-rule">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-dense text-ink-2 sm:flex-row sm:justify-between sm:px-6">
+          <p>CareTrail is an information tool, not medical advice.</p>
+          <p>Demo data is simulated. No real patient data is used.</p>
+        </div>
       </footer>
     </div>
   );

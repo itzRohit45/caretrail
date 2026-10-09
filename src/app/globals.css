@@ -4,54 +4,54 @@
 
 :root {
   color-scheme: light;
-  --paper: #f5f6f8;
-  --sheet: #fdfdfe;
-  --sheet-sunk: #eef0f3;
-  --ink: #16181d;
-  --ink-2: #454c5a;
-  --ink-3: #5b6372;
-  --rule: #d8dce3;
-  --rule-strong: #aeb5c1;
-  --primary: #2340a8;
-  --primary-strong: #1a3189;
-  --primary-soft: #e7ebf9;
-  --on-primary: #fdfdfe;
+  --paper: #f4f2ed;
+  --sheet: #fffefc;
+  --sheet-sunk: #eeebe4;
+  --ink: #1a1c21;
+  --ink-2: #4a4d55;
+  --ink-3: #63666e;
+  --rule: #e3dfd7;
+  --rule-strong: #8e8a82;
+  --primary: #1d2f6f;
+  --primary-strong: #15235a;
+  --primary-soft: #e6e9f3;
+  --on-primary: #fffefc;
   --severe: #b42318;
-  --severe-soft: #fdecea;
-  --severe-rule: #f1b5ae;
+  --severe-soft: #fcebe8;
+  --severe-rule: #efb7af;
   --verify: #8a4b00;
-  --verify-soft: #fff3dc;
-  --verify-rule: #e9c27a;
-  --verified: #116b3a;
-  --verified-soft: #e5f3eb;
-  --verified-rule: #9fd2b3;
-  --shadow-tint: 22 24 29;
+  --verify-soft: #fcf0db;
+  --verify-rule: #e5c27f;
+  --verified: #13693a;
+  --verified-soft: #e3f1e8;
+  --verified-rule: #a3cfb2;
+  --shadow-tint: 40 34 24;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --paper: #0f1115;
-    --sheet: #171a20;
-    --sheet-sunk: #1d2027;
-    --ink: #eceef2;
-    --ink-2: #b8bfcb;
-    --ink-3: #9ca4b2;
-    --rule: #2b3039;
-    --rule-strong: #454c59;
-    --primary: #8ea6ff;
-    --primary-strong: #b3c2ff;
-    --primary-soft: #1c2547;
-    --on-primary: #0f1115;
-    --severe: #ff8a80;
-    --severe-soft: #3a1714;
-    --severe-rule: #6b2a24;
-    --verify: #f5b54a;
-    --verify-soft: #33260f;
-    --verify-rule: #5e4618;
-    --verified: #6fd39a;
-    --verified-soft: #10291c;
-    --verified-rule: #245238;
+    --paper: #121316;
+    --sheet: #1a1c20;
+    --sheet-sunk: #22252a;
+    --ink: #edebe6;
+    --ink-2: #bdbab2;
+    --ink-3: #a19e96;
+    --rule: #2c2e33;
+    --rule-strong: #6b6a66;
+    --primary: #9db0f2;
+    --primary-strong: #c0cdf7;
+    --primary-soft: #1f2745;
+    --on-primary: #121316;
+    --severe: #ff8f84;
+    --severe-soft: #3a1916;
+    --severe-rule: #6a2c26;
+    --verify: #f2b657;
+    --verify-soft: #33270f;
+    --verify-rule: #5f4719;
+    --verified: #74d19c;
+    --verified-soft: #12291c;
+    --verified-rule: #285a3c;
     --shadow-tint: 0 0 0;
   }
 }
@@ -67,9 +67,9 @@
   --ink-3: #3f4550;
   --rule: #c9ced6;
   --rule-strong: #6b7280;
-  --primary: #1a3189;
-  --primary-strong: #142770;
-  --primary-soft: #e7ebf9;
+  --primary: #15235a;
+  --primary-strong: #0f1a45;
+  --primary-soft: #e6e9f3;
   --on-primary: #ffffff;
   --severe: #a11b12;
   --severe-soft: #fdecea;
@@ -104,6 +104,7 @@
 
   --font-*: initial;
   --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
   --font-mono: var(--font-atkinson-mono), ui-monospace, monospace;
 
   --text-*: initial;
@@ -115,27 +116,31 @@
   --text-body--line-height: 1.55;
   --text-lead: 1.25rem;
   --text-lead--line-height: 1.45;
-  --text-title: 1.5rem;
+  --text-title: 1.375rem;
   --text-title--line-height: 1.25;
-  --text-title--letter-spacing: -0.02em;
-  --text-display: 2rem;
-  --text-display--line-height: 1.15;
+  --text-title--letter-spacing: -0.01em;
+  --text-display: 2.125rem;
+  --text-display--line-height: 1.1;
   --text-display--letter-spacing: -0.02em;
-  --text-date: 2.75rem;
-  --text-date--line-height: 1;
-  --text-date--letter-spacing: -0.02em;
+  --text-headline: 2.75rem;
+  --text-headline--line-height: 1.05;
+  --text-headline--letter-spacing: -0.025em;
+  --text-hero: 4rem;
+  --text-hero--line-height: 1.02;
+  --text-hero--letter-spacing: -0.03em;
   --text-emergency: 3rem;
   --text-emergency--line-height: 1.05;
   --text-emergency--letter-spacing: -0.02em;
 
   --radius-*: initial;
-  --radius-control: 10px;
-  --radius-card: 14px;
+  --radius-control: 12px;
+  --radius-card: 18px;
+  --radius-media: 28px;
   --radius-pill: 9999px;
 
   --shadow-*: initial;
-  --shadow-sheet: 0 1px 2px rgb(var(--shadow-tint) / 0.06), 0 2px 10px rgb(var(--shadow-tint) / 0.06);
-  --shadow-lift: 0 10px 28px rgb(var(--shadow-tint) / 0.14), 0 2px 6px rgb(var(--shadow-tint) / 0.08);
+  --shadow-card: 0 1px 2px rgb(var(--shadow-tint) / 0.05);
+  --shadow-float: 0 18px 40px -12px rgb(var(--shadow-tint) / 0.28), 0 4px 10px rgb(var(--shadow-tint) / 0.08);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
