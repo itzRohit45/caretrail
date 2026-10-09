@@ -1,0 +1,218 @@
+"use client";
+
+import { useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Camera, FilePlus, FileText, ImageSquare, CheckCircle, CircleNotch, ArrowCounterClockwise, X } from "@phosphor-icons/react";
+import { buttonClass } from "@/components/ui/button";
+import { ACCEPTED_TYPES, DOC_TYPES, DOC_TYPE_LABELS, MAX_UPLOAD_BYTES } from "@/lib/schemas/documents";
+import { cn } from "@/lib/cn";
+
+type DocType = (typeof DOC_TYPES)[number];
+type Phase =
+  | { name: "pick" }
+  | { name: "hashing" }
+  | { name: "uploading"; percent: number }
+  | { name: "reading" }
+  | { name: "error"; message: string; retry?: boolean; duplicateId?: string };
+
+const mb = (n: number) => `${(n / 1048576).toFixed(1)} MB`;
+
+async function sha256(file: File) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function putWithProgress(url: string, file: File, onProgress: (p: number) => void) {
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("content-type", file.type);
+    xhr.setRequestHeader("x-upsert", "true");
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`status ${xhr.status}`)));
+    xhr.onerror = () => reject(new Error("network"));
+    xhr.send(file);
+  });
+}
+
+export function Uploader() {
+  const router = useRouter();
+  const [type, setType] = useState<DocType | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [phase, setPhase] = useState<Phase>({ name: "pick" });
+  const camera = useRef<HTMLInputElement>(null);
+  const picker = useRef<HTMLInputElement>(null);
+
+  function choose(f: File | undefined) {
+    if (!f) return;
+    if (!(ACCEPTED_TYPES as readonly string[]).includes(f.type)) {
+      setFile(null);
+      setPhase({ name: "error", message: `"${f.name}" is not a PDF, JPG or PNG. Please choose one of those.` });
+      return;
+    }
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setFile(null);
+      setPhase({ name: "error", message: `This file is ${mb(f.size)}. Files can be up to 10 MB. Try a smaller photo or a PDF.` });
+      return;
+    }
+    setFile(f);
+    setPhase({ name: "pick" });
+  }
+
+  async function upload() {
+    if (!file || !type) return;
+    try {
+      setPhase({ name: "hashing" });
+      const file_hash = await sha256(file);
+      const res = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ file_hash, size_bytes: file.size, mime_type: file.type, original_filename: file.name, type }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401) return router.push(`/login?next=${encodeURIComponent("/upload")}`);
+      if (!res.ok) {
+        return setPhase({ name: "error", message: body.error?.message ?? "We could not start the upload.", duplicateId: body.error?.duplicate?.id, retry: res.status >= 500 });
+      }
+      const { document_id, upload_url } = body.data as { document_id: string; upload_url: string };
+      setPhase({ name: "uploading", percent: 0 });
+      try {
+        await putWithProgress(upload_url, file, (percent) => setPhase({ name: "uploading", percent }));
+      } catch {
+        return setPhase({ name: "error", message: "The upload stopped. Check your internet connection and try again.", retry: true });
+      }
+      setPhase({ name: "reading" });
+      const processed = await fetch(`/api/documents/${document_id}/process`, { method: "POST" });
+      const result = await processed.json().catch(() => ({}));
+      if (!processed.ok && result.error?.retry_upload) {
+        return setPhase({ name: "error", message: result.error.message, retry: true });
+      }
+      router.push(`/records/${document_id}`);
+    } catch {
+      setPhase({ name: "error", message: "Something went wrong. Check your connection and try again.", retry: true });
+    }
+  }
+
+  const busy = phase.name === "hashing" || phase.name === "uploading" || phase.name === "reading";
+
+  if (busy) {
+    const steps = [
+      { label: "Checking the file", done: phase.name !== "hashing" },
+      { label: phase.name === "uploading" ? `Uploading, ${phase.percent}%` : "Uploading", done: phase.name === "reading" },
+      { label: "Reading your document", done: false },
+    ];
+    const current = steps.findIndex((s) => !s.done);
+    return (
+      <section aria-live="polite" className="rounded-card border border-rule bg-sheet p-6 sm:p-8">
+        <h2 className="text-title font-bold">{phase.name === "reading" ? "Reading your document" : "Uploading your record"}</h2>
+        <p className="mt-1 text-ink-2">
+          {phase.name === "reading" ? "This usually takes 5 to 15 seconds. Please keep this page open." : "Please keep this page open."}
+        </p>
+        {phase.name === "uploading" ? (
+          <div className="mt-5 h-2 overflow-hidden rounded-pill bg-sheet-sunk" role="progressbar" aria-valuenow={phase.percent} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
+            <div className="h-full rounded-pill bg-primary transition-[width] duration-150" style={{ width: `${phase.percent}%` }} />
+          </div>
+        ) : null}
+        <ol className="mt-6 space-y-3">
+          {steps.map((s, i) => (
+            <li key={s.label} className={cn("flex items-center gap-3", i > current && "text-ink-3")}>
+              {s.done ? (
+                <CheckCircle aria-hidden weight="fill" className="size-6 text-verified" />
+              ) : i === current ? (
+                <CircleNotch aria-hidden weight="bold" className="size-6 animate-spin text-primary" />
+              ) : (
+                <span aria-hidden className="size-6 rounded-pill border-2 border-rule" />
+              )}
+              <span className={cn("font-semibold", i === current && "text-ink")}>{s.label}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <section aria-labelledby="kind-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-7">
+        <h2 id="kind-title" className="text-title font-bold">What is it?</h2>
+        <div role="radiogroup" aria-labelledby="kind-title" className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {DOC_TYPES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="radio"
+              aria-checked={type === t}
+              onClick={() => setType(t)}
+              className={cn(
+                "min-h-14 rounded-control border px-3 font-semibold transition-colors duration-150",
+                type === t ? "border-primary bg-primary text-on-primary" : "border-rule-strong bg-sheet text-ink hover:border-ink",
+              )}
+            >
+              {DOC_TYPE_LABELS[t]}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="file-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-7">
+        <h2 id="file-title" className="text-title font-bold">Add the file</h2>
+        <p className="mt-1 text-ink-2">A clear photo or a PDF. Up to 10 MB.</p>
+        <input ref={camera} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => choose(e.target.files?.[0])} />
+        <input ref={picker} type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => choose(e.target.files?.[0])} />
+
+        {file ? (
+          <div className="mt-5 flex items-center gap-4 rounded-control border border-rule bg-sheet-sunk p-4">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-control bg-sheet text-primary">
+              {file.type === "application/pdf" ? <FileText aria-hidden className="size-7" /> : <ImageSquare aria-hidden className="size-7" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold">{file.name}</p>
+              <p className="text-dense text-ink-2">{mb(file.size)}</p>
+            </div>
+            <button type="button" onClick={() => setFile(null)} className={buttonClass("quiet", "dense")} aria-label="Remove this file">
+              <X aria-hidden className="size-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => camera.current?.click()} className={buttonClass("secondary", "patient", "min-h-16 justify-start rounded-control")}>
+              <Camera aria-hidden weight="duotone" className="size-7 text-primary" />
+              Take a photo
+            </button>
+            <button type="button" onClick={() => picker.current?.click()} className={buttonClass("secondary", "patient", "min-h-16 justify-start rounded-control")}>
+              <FilePlus aria-hidden weight="duotone" className="size-7 text-primary" />
+              Choose a file
+            </button>
+          </div>
+        )}
+      </section>
+
+      {phase.name === "error" ? (
+        <div role="alert" className="rounded-card border border-severe-rule bg-severe-soft p-4">
+          <p className="font-bold text-severe">{phase.message}</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {phase.duplicateId ? (
+              <Link href={`/records/${phase.duplicateId}`} className={buttonClass("secondary", "dense")}>
+                Open it
+              </Link>
+            ) : null}
+            {phase.retry && file && type ? (
+              <button type="button" onClick={upload} className={buttonClass("secondary", "dense")}>
+                <ArrowCounterClockwise aria-hidden className="size-5" />
+                Try again
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button type="button" onClick={upload} disabled={!file || !type} className={buttonClass("primary")}>
+          Upload record
+        </button>
+        {!type || !file ? <p className="text-ink-2">{!type ? "Choose what it is first." : "Then add the file."}</p> : null}
+      </div>
+    </div>
+  );
+}

@@ -47,12 +47,16 @@ Everything below was used to build CareTrail. No real patient data is used anywh
 | pdf.js (`pdfjs-dist`) | PDF rendering and source-text highlighting |
 | Phosphor Icons (`@phosphor-icons/react`) | Icons |
 | `server-only` | Keeps server secrets out of client bundles |
-| Google Gemini API (`gemini-3.6-flash`, fallback `gemini-3.5-flash-lite`) | Document extraction (vision). Free tier; simulated data only. |
+| Google Gemini API (`gemini-3.5-flash-lite`, fallback `gemini-3.6-flash`) | Document extraction (vision). Free tier; only simulated documents are sent. Model order chosen from a head-to-head test on the demo documents. |
 | Brevo transactional email API | Emergency and break-glass alert emails |
-| Atkinson Hyperlegible Next / Mono (Braille Institute, via Google Fonts) | Typeface chosen for low-vision readers |
+| Atkinson Hyperlegible Next / Mono (Braille Institute) and Source Serif 4 (Adobe), via Google Fonts | Body type chosen for low-vision readers; serif for headings and numbers |
+| Kalam (Google Fonts) | Handwriting style used only when generating the simulated demo prescriptions |
+| Photo by Wilfred Sequeira on Unsplash (Unsplash License) | Landing page portrait |
+| Brand-to-generic map and test validity table | Hand-curated for this demo from publicly known Indian brand names and typical lab practice; not a clinical database |
 | Vercel | Hosting |
 | `pg` (dev) | Migration runner and type generator scripts |
 | Vitest (dev) | Unit tests |
+| tsx (dev) | Runs TypeScript scripts (seeding, extraction checks) |
 | Playwright Core (dev, drives local Chrome) | Browser smoke tests and screenshots |
 | ESLint (dev) | Linting |
 | Agent skills used during development: ui-ux-pro-max, design-taste-frontend, impeccable, ponytail, graphify (see `skills-lock.json`) | Design system research, UI audits, code-size discipline, code graph |

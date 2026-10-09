@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle, CircleDashed, CaretRight, PencilSimple } from "@phosphor-icons/react/ssr";
+import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
 import { requirePatient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageBody, PageHeader, SheetSection } from "@/components/ui/page";
 import { buttonClass } from "@/components/ui/button";
 import { EmergencyPreview } from "@/components/patient/emergency-preview";
+import { RecordRow } from "@/components/records/recent-records";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -17,11 +19,17 @@ function greeting() {
 export default async function HomePage() {
   const { patient } = await requirePatient();
   const supabase = await createClient();
-  const { data: allergies } = await supabase
-    .from("allergies")
-    .select("*")
-    .eq("patient_id", patient.id)
-    .order("created_at", { ascending: true });
+  const [{ data: allergies }, { data: docs }] = await Promise.all([
+    supabase.from("allergies").select("*").eq("patient_id", patient.id).order("created_at", { ascending: true }),
+    supabase
+      .from("documents")
+      .select("id, type, doc_date, created_at, facility, doctor_name, extraction_status")
+      .eq("patient_id", patient.id)
+      .eq("upload_status", "uploaded")
+      .order("created_at", { ascending: false })
+      .limit(6),
+  ]);
+  const waiting = (docs ?? []).filter((d) => d.extraction_status === "needs_review" || d.extraction_status === "failed");
 
   const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
   const checks = [
@@ -47,6 +55,52 @@ export default async function HomePage() {
         }
       />
       <PageBody>
+        {waiting.length ? (
+          <section aria-labelledby="waiting-title" className="rounded-card border border-verify-rule bg-verify-soft p-5 sm:p-6">
+            <h2 id="waiting-title" className="text-title font-bold text-ink">
+              {waiting.length === 1 ? "1 record needs your check" : `${waiting.length} records need your check`}
+            </h2>
+            <p className="mt-1 text-ink-2">Nothing is added to your record until you check it.</p>
+            <ul className="mt-3 divide-y divide-verify-rule">
+              {waiting.map((d) => (
+                <RecordRow key={d.id} doc={d} />
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <section aria-labelledby="records-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-7">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="records-title" className="text-title font-bold">Your records</h2>
+              <p className="mt-1 text-ink-2">Prescriptions, lab reports and hospital papers you have added.</p>
+            </div>
+            <Link href="/upload" className={buttonClass("primary", "dense", "shrink-0")}>
+              <Plus aria-hidden weight="bold" className="size-5" />
+              Add a record
+            </Link>
+          </div>
+          {docs?.length ? (
+            <ul className="mt-4 divide-y divide-rule">
+              {docs.map((d) => (
+                <RecordRow key={d.id} doc={d} />
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-5">
+              <EmptyState
+                title="Add your first record"
+                body="Take a photo of a prescription or upload a lab report PDF. CareTrail reads it and you check it before anything is saved."
+                action={
+                  <Link href="/upload" className={buttonClass("primary")}>
+                    <Plus aria-hidden weight="bold" className="size-5" /> Add a record
+                  </Link>
+                }
+              />
+            </div>
+          )}
+        </section>
+
         <div className="grid items-start gap-6 md:grid-cols-[1fr_1.1fr]">
           <SheetSection
             id="ready"

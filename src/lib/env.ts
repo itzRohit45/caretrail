@@ -9,7 +9,8 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(20),
   SUPABASE_SECRET_KEY: z.string().min(20),
   GEMINI_API_KEY: optional,
-  GEMINI_MODELS: z.string().default("gemini-3.6-flash,gemini-3.5-flash-lite"),
+  // Order chosen from a head-to-head on the demo documents (10 Oct 2026): lite was accurate and fast; 3.6-flash was often busy (503).
+  GEMINI_MODELS: z.string().default("gemini-3.5-flash-lite,gemini-3.6-flash"),
   BREVO_API_KEY: optional,
   ALERT_FROM_EMAIL: optional,
   IP_HASH_SALT: z.string().min(32),
