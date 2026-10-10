@@ -106,7 +106,10 @@ export default function Landing() {
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-dense text-ink-2 sm:flex-row sm:justify-between sm:px-6">
           <p>CareTrail is an information tool, not medical advice.</p>
-          <p>Records shown on this page are simulated examples.</p>
+          <p>
+            Records shown on this page are simulated examples.{" "}
+            <Link href="/privacy" className="font-semibold text-primary underline">Privacy policy</Link>
+          </p>
         </div>
       </footer>
     </div>

@@ -104,7 +104,7 @@ Everything below was used to build CareTrail. No real patient data is used anywh
 | pdf-lib | Combines several photos or PDFs of one report into one PDF, in the browser |
 | Phosphor Icons (`@phosphor-icons/react`) | Icons |
 | `server-only` | Keeps server secrets out of client bundles |
-| Google Gemini API (`gemini-3.5-flash-lite`, fallback `gemini-3.6-flash`) | Document extraction (vision). Free tier; only simulated documents are sent. Model order chosen from a head-to-head test on the demo documents. |
+| Google Gemini API (`gemini-3.5-flash-lite`, fallback `gemini-3.6-flash`) | Document extraction (vision). Free tier: Google may use submitted content to improve its services, which the privacy policy (/privacy) tells users before they upload. Model order chosen from a head-to-head test on the demo documents. |
 | Brevo transactional email API | Emergency and break-glass alert emails |
 | Atkinson Hyperlegible Next / Mono (Braille Institute) and Source Serif 4 (Adobe), via Google Fonts | Body type chosen for low-vision readers; serif for headings and numbers |
 | Kalam (Google Fonts) | Handwriting style used only when generating the simulated demo prescriptions |
