@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://caretrail-tan.vercel.app"><b>Live app: caretrail-tan.vercel.app</b></a>
-  &nbsp;·&nbsp; <a href="VIDEO_LINK_HERE"><b>Demo video</b></a>
+  &nbsp;·&nbsp; <a href="https://drive.google.com/file/d/1CsZFE61NFdezU4d_6nyQBGpc4DFkX5x7/view?usp=sharing"><b>Demo video</b></a>
   &nbsp;·&nbsp; Test account: <code>caretrail.test@example.com</code> / <code>CareTrail@2026</code>
 </p>
 
