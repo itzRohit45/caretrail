@@ -61,14 +61,14 @@ try {
   check("duplicate warning names both doctors", /Suresh/.test(dup ?? "") && /Ramesh/.test(dup ?? ""));
   check("moderate interaction listed", await seen(page.getByText(/moderate interaction/i)));
   check("fixed safety note shown", await seen(page.getByText("Discuss with your doctor; do not stop medicines on your own.")));
-  check("ended course prompts to mark stopped", await seen(page.getByText(/This course was written to end on/)));
+  check("ended course prompts to mark stopped", await seen(page.getByText(/Course ended .* Mark it stopped/).first()));
   await page.screenshot({ path: `${shots}/medicines-desktop.png`, fullPage: true, caret: "initial" });
 
   const api = await page.evaluate(async () => (await fetch("/api/safety")).json());
   check("GET /api/safety returns the warnings as data", Array.isArray(api.data?.warnings) && api.data.warnings.some((w) => w.kind === "allergy" && w.level === "severe"));
 
-  const gluconorm = page.locator("li").filter({ hasText: "Gluconorm" }).filter({ has: page.getByRole("button", { name: "Mark as stopped" }) });
-  await gluconorm.getByRole("button", { name: "Mark as stopped" }).click();
+  const gluconorm = page.locator("li").filter({ hasText: "Gluconorm" }).filter({ has: page.getByRole("button", { name: /^Stop / }) });
+  await gluconorm.getByRole("button", { name: /^Stop / }).click();
   await page.getByRole("button", { name: "Yes, mark stopped" }).click();
   await page.getByText("Metformin prescribed twice").waitFor({ state: "detached", timeout: 20000 }).catch(() => {});
   check("stopping one brand clears the duplicate warning", (await page.getByText("Metformin prescribed twice").count()) === 0);

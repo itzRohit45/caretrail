@@ -6,13 +6,14 @@ import { CONDITION_LABELS } from "@/lib/normalise/conditions";
 import { DateBlock } from "@/components/ui/date-block";
 import { Badge } from "@/components/ui/badge";
 import { DOC_ICONS } from "@/components/records/recent-records";
+import { medicineLabel } from "@/lib/format";
 
 const monthLabel = (iso: string) =>
   new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(`${iso}T00:00:00+05:30`));
 
 function summary(e: TimelineEntry) {
   const lines: string[] = [];
-  if (e.medications.length) lines.push(e.medications.map((m) => [m.brand_name, m.dose].filter(Boolean).join(" ")).join(", "));
+  if (e.medications.length) lines.push(e.medications.map((m) => medicineLabel(m.brand_name, m.dose)).join(", "));
   // A blood pressure reading is stored as two rows (systolic, diastolic); show it once, as written.
   const labs = e.labs.filter((l) => l.test_code !== "BP_DIA");
   const shown = labs.slice(0, 4).map((l) => {
@@ -44,9 +45,9 @@ export function TimelineList({ entries }: { entries: TimelineEntry[] }) {
               const lines = summary(e);
               return (
                 <li key={e.id}>
-                  <Link href={`/records/${e.id}`} className="group flex gap-4 rounded-card border border-rule bg-sheet p-4 transition-colors duration-150 hover:border-rule-strong sm:gap-5 sm:p-5">
-                    <DateBlock date={e.date} marker={e.doc_date_source === "upload" ? "Upload date" : undefined} />
-                    <div className="min-w-0 flex-1 border-l border-rule pl-4 sm:pl-5">
+                  <Link href={`/records/${e.id}`} className="group flex gap-3 rounded-card border border-rule bg-sheet p-3.5 transition-colors duration-150 hover:border-rule-strong sm:gap-5 sm:p-5">
+                    <DateBlock date={e.date} responsive marker={e.doc_date_source === "upload" ? "Upload date" : undefined} />
+                    <div className="min-w-0 flex-1 border-l border-rule pl-3 sm:pl-5">
                       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-dense font-semibold text-ink-2">
                         <Icon aria-hidden weight="duotone" className="size-5 text-primary" />
                         {DOC_TYPE_LABELS[e.type as keyof typeof DOC_TYPE_LABELS]}
@@ -71,7 +72,7 @@ export function TimelineList({ entries }: { entries: TimelineEntry[] }) {
                         </p>
                       ) : null}
                     </div>
-                    <CaretRight aria-hidden className="size-5 shrink-0 self-center text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    <CaretRight aria-hidden className="hidden size-5 shrink-0 self-center text-ink-3 transition-transform duration-150 group-hover:translate-x-0.5 sm:block" />
                   </Link>
                 </li>
               );

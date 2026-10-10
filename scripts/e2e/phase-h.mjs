@@ -34,6 +34,7 @@ try {
   await a.goto(`${BASE}/medicines`);
   check("duplicate metformin across two doctors", await seen(a.getByText("Metformin prescribed twice")));
   await a.goto(`${BASE}/records`);
+  await a.locator("main ol > li").nth(9).waitFor({ timeout: 20000 }).catch(() => {});
   check("timeline lists the seeded records", (await a.locator("main ol > li").count()) === 10);
   await a.goto(`${BASE}/records/trends`);
   const hba1c = a.locator("section", { has: a.getByRole("heading", { name: "HbA1c", exact: true }) });

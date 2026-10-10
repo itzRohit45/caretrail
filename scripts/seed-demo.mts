@@ -10,7 +10,8 @@ import { loadReference, payloadFromExtraction, saveFacts } from "@/lib/records/s
 import { hashToken, newToken } from "@/lib/sharing/tokens";
 
 const TEMPLATE_OWNER = "demo-templates@example.com";
-const alertEmail = process.env.DEMO_ALERT_EMAIL || null;
+// Demo contacts never carry a real email address: anyone trying the demo can see the profile.
+const alertEmail = null;
 const PATIENTS = {
   ravi: { name: "Ravi Kumar", dob: "1971-03-14", sex: "male", blood: "B+", contact: ["Priya Kumar", "+91 98450 31267"], allergies: [["Penicillin", "severe", "Rash and swelling"]] },
   lakshmi: { name: "Lakshmi Iyer", dob: "1984-07-22", sex: "female", blood: "A+", contact: ["Venkat Iyer", "+91 98840 55129"], allergies: [] },

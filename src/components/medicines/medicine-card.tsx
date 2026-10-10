@@ -55,12 +55,13 @@ export function MedicineCard({ group, endedOn }: { group: MedGroup; endedOn: str
           </div>
         </div>
       ) : (
-        <dl className="mt-3 grid gap-x-6 gap-y-1 text-dense sm:grid-cols-2">
-          <div><dt className="inline text-ink-2">Dose: </dt><dd className="inline font-semibold">{m.dose ?? "Not written"}</dd></div>
-          <div><dt className="inline text-ink-2">How often: </dt><dd className="inline font-semibold">{decodeFrequency(m.frequency) ?? m.frequency ?? "Not written"}</dd></div>
-          <div><dt className="inline text-ink-2">Prescribed by: </dt><dd className="inline font-semibold">{m.prescriber ?? "Unknown"}</dd></div>
-          <div><dt className="inline text-ink-2">Since: </dt><dd className="inline font-semibold">{m.start_date ? formatDate(m.start_date) : "Unknown"}</dd></div>
-        </dl>
+        <div className="mt-2 space-y-0.5">
+          <p className="font-semibold">{[m.dose ?? "Dose not written", decodeFrequency(m.frequency) ?? m.frequency].filter(Boolean).join(", ")}</p>
+          <p className="text-dense text-ink-2">
+            {m.prescriber ?? "Prescriber unknown"}
+            {m.start_date ? `, since ${formatDate(m.start_date)}` : ""}
+          </p>
+        </div>
       )}
 
       {group.history.length ? (
@@ -73,7 +74,7 @@ export function MedicineCard({ group, endedOn }: { group: MedGroup; endedOn: str
         <p className="mt-3 flex items-start gap-2 rounded-control bg-sheet-sunk px-3 py-2 text-dense">
           <CalendarX aria-hidden className="mt-0.5 size-5 shrink-0 text-ink-2" />
           <span>
-            This course was written to end on <span className="font-semibold">{formatDate(endedOn)}</span>. If you have finished it, mark it as stopped.
+            Course ended {formatDate(endedOn)}. Finished it? Mark it stopped.
           </span>
         </p>
       ) : null}
@@ -93,28 +94,32 @@ export function MedicineCard({ group, endedOn }: { group: MedGroup; endedOn: str
 
       {error ? <p role="alert" className="mt-3 font-semibold text-severe">{error}</p> : null}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
-        <Link href={`/records/${m.source_document_id}`} className={buttonClass("quiet", "dense")}>
-          <FileText aria-hidden className="size-5" /> Source
-        </Link>
-        {mode === "edit" ? (
-          <>
-            <button type="button" disabled={busy} onClick={() => send({ action: "edit", dose: dose || null, frequency: frequency || null })} className={buttonClass("primary", "dense")}>
-              {busy ? <CircleNotch aria-hidden className="size-5 animate-spin" /> : null} Save
-            </button>
-            <button type="button" onClick={() => setMode("view")} className={buttonClass("quiet", "dense")}>Cancel</button>
-          </>
-        ) : mode === "view" ? (
-          <>
-            <button type="button" onClick={() => setMode("edit")} className={buttonClass("quiet", "dense")}>
-              <PencilSimple aria-hidden className="size-5" /> Correct dose
-            </button>
-            <button type="button" onClick={() => setMode("confirm-stop")} className={buttonClass("quiet", "dense")}>
-              <Prohibit aria-hidden className="size-5" /> Mark as stopped
-            </button>
-          </>
-        ) : null}
-      </div>
+      {mode === "edit" ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
+          <button type="button" disabled={busy} onClick={() => send({ action: "edit", dose: dose || null, frequency: frequency || null })} className={buttonClass("primary", "dense")}>
+            {busy ? <CircleNotch aria-hidden className="size-5 animate-spin" /> : null} Save
+          </button>
+          <button type="button" onClick={() => setMode("view")} className={buttonClass("quiet", "dense")}>Cancel</button>
+        </div>
+      ) : mode === "view" ? (
+        <div className="mt-3 grid grid-cols-3 gap-1 border-t border-rule pt-2">
+          {[
+            { key: "source", label: "Source", Icon: FileText, href: `/records/${m.source_document_id}` },
+            { key: "edit", label: "Edit dose", Icon: PencilSimple, onClick: () => setMode("edit") },
+            { key: "stop", label: "Stop", Icon: Prohibit, onClick: () => setMode("confirm-stop") },
+          ].map((a) =>
+            a.href ? (
+              <Link key={a.key} href={a.href} aria-label={`Source of ${m.brand_name}`} className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-control text-dense font-semibold text-primary hover:bg-primary-soft">
+                <a.Icon aria-hidden className="size-5" /> {a.label}
+              </Link>
+            ) : (
+              <button key={a.key} type="button" onClick={a.onClick} aria-label={a.key === "stop" ? `Stop ${m.brand_name}` : `Edit dose of ${m.brand_name}`} className="flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-control text-dense font-semibold text-primary hover:bg-primary-soft">
+                <a.Icon aria-hidden className="size-5" /> {a.label}
+              </button>
+            ),
+          )}
+        </div>
+      ) : null}
     </li>
   );
 }

@@ -233,12 +233,16 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
                     Medicine inside: <span className="font-semibold capitalize text-ink">{m.generics.join(" + ")}</span>
                   </p>
                 ) : null}
-                <div className="grid gap-3 sm:grid-cols-[1fr_1.4fr_0.8fr]">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_0.8fr_1.4fr]">
                   <div>
                     <label htmlFor={`dose-${m.key}`} className={label}>Dose</label>
                     <input id={`dose-${m.key}`} value={m.dose} onChange={(e) => updMed(m.key, { dose: e.target.value })} className={smallInput} />
                   </div>
                   <div>
+                    <label htmlFor={`days-${m.key}`} className={label}>Days</label>
+                    <input id={`days-${m.key}`} type="number" inputMode="numeric" min={1} max={3650} value={m.duration_days ?? ""} onChange={(e) => updMed(m.key, { duration_days: e.target.value ? Number(e.target.value) : null })} className={smallInput} />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
                     <label htmlFor={`freq-${m.key}`} className={label}>How often</label>
                     <input id={`freq-${m.key}`} value={m.frequency} onChange={(e) => updMed(m.key, { frequency: e.target.value })} className={smallInput} aria-describedby={`freq-${m.key}-plain`} />
                     {decodeFrequency(m.frequency) ? (
@@ -246,10 +250,6 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
                         {decodeFrequency(m.frequency)}
                       </p>
                     ) : null}
-                  </div>
-                  <div>
-                    <label htmlFor={`days-${m.key}`} className={label}>Days</label>
-                    <input id={`days-${m.key}`} type="number" inputMode="numeric" min={1} max={3650} value={m.duration_days ?? ""} onChange={(e) => updMed(m.key, { duration_days: e.target.value ? Number(e.target.value) : null })} className={smallInput} />
                   </div>
                 </div>
                 <Flag reasons={m.reasons} />
@@ -278,11 +278,14 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
               <Removed key={l.key} name={l.test_name} onUndo={() => updLab(l.key, { removed: false })} />
             ) : (
               <li key={l.key} className={cn("space-y-3 rounded-card border p-4", l.reasons.length ? "border-verify-rule" : "border-rule")}>
-                <div className="grid items-end gap-3 sm:grid-cols-[2fr_1fr_1fr_auto]">
-                  <div>
+                <div>
+                  <div className="flex items-center justify-between gap-3">
                     <label htmlFor={`lab-${l.key}`} className={label}>Test</label>
-                    <input id={`lab-${l.key}`} value={l.test_name} onChange={(e) => updLab(l.key, { test_name: e.target.value })} className={cn(smallInput, "font-semibold")} />
+                    <RemoveButton name={l.test_name} onClick={() => updLab(l.key, { removed: true })} />
                   </div>
+                  <input id={`lab-${l.key}`} value={l.test_name} onChange={(e) => updLab(l.key, { test_name: e.target.value })} className={cn(smallInput, "font-semibold")} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor={`val-${l.key}`} className={label}>Result</label>
                     <input id={`val-${l.key}`} value={l.value} onChange={(e) => updLab(l.key, { value: e.target.value })} className={cn(smallInput, "font-mono")} />
@@ -291,7 +294,6 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
                     <label htmlFor={`unit-${l.key}`} className={label}>Unit</label>
                     <input id={`unit-${l.key}`} value={l.unit} onChange={(e) => updLab(l.key, { unit: e.target.value })} className={smallInput} />
                   </div>
-                  <RemoveButton name={l.test_name} onClick={() => updLab(l.key, { removed: true })} />
                 </div>
                 <Flag reasons={l.reasons} />
                 <Source text={l.source_text} />

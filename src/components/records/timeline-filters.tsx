@@ -20,7 +20,7 @@ function Chip({ to, on, children }: { to: string; on: boolean; children: React.R
       scroll={false}
       aria-current={on ? "true" : undefined}
       className={cn(
-        "inline-flex min-h-11 items-center rounded-pill border px-4 text-dense font-semibold transition-colors duration-150",
+        "inline-flex min-h-11 shrink-0 items-center rounded-pill border px-4 text-dense font-semibold whitespace-nowrap transition-colors duration-150",
         on ? "border-primary bg-primary text-on-primary" : "border-rule-strong bg-sheet text-ink hover:border-ink",
       )}
     >
@@ -31,9 +31,10 @@ function Chip({ to, on, children }: { to: string; on: boolean; children: React.R
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+    <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
       <p className="w-24 shrink-0 text-dense font-semibold text-ink-2">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
+      {/* Phones: one scrolling row per filter instead of a wall of wrapped chips. */}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-5 sm:px-5 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">{children}</div>
     </div>
   );
 }
@@ -41,7 +42,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 export function TimelineFilterBar({ filters }: { filters: TimelineFilters }) {
   const active = Boolean(filters.condition || filters.type || filters.months || filters.from || filters.to);
   return (
-    <section aria-label="Filter records" className="space-y-3 rounded-card border border-rule bg-sheet p-4 sm:p-5">
+    <section aria-label="Filter records" className="space-y-3 overflow-hidden rounded-card border border-rule bg-sheet p-4 sm:p-5">
       <Row label="Condition">
         <Chip to={href(filters, { condition: undefined })} on={!filters.condition}>All</Chip>
         {CONDITION_FILTERS.map((c) => (

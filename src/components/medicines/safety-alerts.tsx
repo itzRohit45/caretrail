@@ -9,9 +9,11 @@ function Sources({ w }: { w: SafetyWarning }) {
       {w.items.map((i) => (
         <li key={i.medicationId}>
           <Link href={`/records/${i.documentId}`} className="inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-rule bg-sheet px-3 text-dense font-semibold text-primary hover:border-rule-strong">
-            <FileText aria-hidden className="size-4" />
-            {i.brand}
-            {i.prescriber ? <span className="font-normal text-ink-2">, {i.prescriber}</span> : null}
+            <FileText aria-hidden className="size-4 shrink-0" />
+            <span>
+              {i.brand}
+              {i.prescriber ? <span className="font-normal text-ink-2">, {i.prescriber}</span> : null}
+            </span>
           </Link>
         </li>
       ))}
@@ -62,7 +64,9 @@ export function SafetyAlerts({ warnings, unrecognised }: { warnings: SafetyWarni
             <div className="space-y-3">
               <h3 className="text-lead font-bold">To discuss with your doctor</h3>
               {duplicates.length ? <ul className="space-y-3">{duplicates.map((w) => <WarningCard key={w.id} w={w} />)}</ul> : null}
-              {moderate.length ? (
+              {moderate.length === 1 ? (
+                <ul>{moderate.map((w) => <WarningCard key={w.id} w={w} />)}</ul>
+              ) : moderate.length ? (
                 <details className="group rounded-card border border-rule bg-sheet p-4 sm:p-5" open={moderate.length <= 2}>
                   <summary className="flex cursor-pointer list-none items-center gap-2 font-bold">
                     <Warning aria-hidden weight="fill" className="size-5" />
@@ -83,8 +87,8 @@ export function SafetyAlerts({ warnings, unrecognised }: { warnings: SafetyWarni
               <ul className="mt-2 divide-y divide-rule">{info.map((w) => <WarningCard key={w.id} w={w} flat />)}</ul>
             </details>
           ) : null}
-          <p className="flex items-center gap-2 font-semibold text-ink">
-            <Info aria-hidden weight="fill" className="size-5 text-primary" />
+          <p className="flex items-start gap-2 font-semibold text-ink">
+            <Info aria-hidden weight="fill" className="mt-0.5 size-5 shrink-0 text-primary" />
             {SAFETY_NOTE}
           </p>
         </>

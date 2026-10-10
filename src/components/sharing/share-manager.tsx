@@ -36,7 +36,7 @@ function remaining(iso: string) {
 
 function Tile({ checked, onChange, children, type = "radio", name }: { checked: boolean; onChange: () => void; children: React.ReactNode; type?: "radio" | "checkbox"; name: string }) {
   return (
-    <label className={cn("flex min-h-13 cursor-pointer items-center justify-center rounded-control border px-3 text-center font-semibold transition-colors duration-150 has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary", checked ? "border-primary bg-primary text-on-primary" : "border-rule-strong bg-sheet text-ink hover:border-ink")}>
+    <label className={cn("flex min-h-13 cursor-pointer items-center justify-center rounded-control border px-2 text-center font-semibold transition-colors duration-150 has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary", checked ? "border-primary bg-primary text-on-primary" : "border-rule-strong bg-sheet text-ink hover:border-ink")}>
       <input type={type} name={name} checked={checked} onChange={onChange} className="sr-only" />
       {children}
     </label>
@@ -191,9 +191,9 @@ export function ShareManager() {
           <fieldset className="space-y-2">
             <legend className="mb-1 font-semibold">For how long?</legend>
             <div className="grid grid-cols-3 gap-2">
-              <Tile name="expiry" checked={expiry === "1h"} onChange={() => setExpiry("1h")}>1 hour</Tile>
-              <Tile name="expiry" checked={expiry === "24h"} onChange={() => setExpiry("24h")}>24 hours</Tile>
-              <Tile name="expiry" checked={expiry === "7d"} onChange={() => setExpiry("7d")}>7 days</Tile>
+              <Tile name="expiry" checked={expiry === "1h"} onChange={() => setExpiry("1h")}><span className="whitespace-nowrap">1 hour</span></Tile>
+              <Tile name="expiry" checked={expiry === "24h"} onChange={() => setExpiry("24h")}><span className="whitespace-nowrap">24 hours</span></Tile>
+              <Tile name="expiry" checked={expiry === "7d"} onChange={() => setExpiry("7d")}><span className="whitespace-nowrap">7 days</span></Tile>
             </div>
           </fieldset>
           <label className="flex cursor-pointer items-start gap-3 rounded-control border border-rule p-4">

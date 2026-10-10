@@ -43,3 +43,10 @@ export function ageFrom(dob: string | null) {
 export function daysBetween(fromIso: string, toIso: string) {
   return Math.round((toDate(toIso).getTime() - toDate(fromIso).getTime()) / 86_400_000);
 }
+
+/** "Gluconorm 500" + "500" reads as "Gluconorm 500", not "Gluconorm 500 500". */
+export function medicineLabel(brand: string, dose: string | null) {
+  const strength = dose?.trim().match(/^([\d.]+)\s*(mg|mcg|g|ml|iu)?$/i)?.[1];
+  if (!dose || (strength && brand.split(/\s+/).includes(strength))) return brand;
+  return `${brand} ${dose}`;
+}

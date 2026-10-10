@@ -57,7 +57,8 @@ function Card({ card }: { card: EmergencyCard }) {
     <main className="mx-auto max-w-2xl">
       <section className="flex items-start justify-between gap-4 px-5 pt-5 pb-4">
         <div className="min-w-0">
-          <h1 className="text-emergency font-extrabold break-words">{card.name}</h1>
+          {/* 48px breaks a surname like "Prakash" mid-word next to the blood group on a 360px phone. */}
+          <h1 className="text-display font-extrabold break-words sm:text-emergency">{card.name}</h1>
           <p className="mt-1 text-title font-semibold text-ink-2">{[card.age !== null ? `${card.age} years` : null, cap(card.sex)].filter(Boolean).join(", ") || "Age not recorded"}</p>
         </div>
         <div className="flex shrink-0 flex-col items-center rounded-card border-4 border-ink px-4 py-2">

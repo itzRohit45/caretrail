@@ -79,6 +79,7 @@ try {
   await page.screenshot({ path: `${shots}/record-rx-saved-desktop.png`, fullPage: true, caret: "initial" });
 
   await page.goto(`${BASE}/home`);
+  await page.getByRole("link", { name: /Ramesh Family Clinic|Sri Ram Diagnostics/ }).nth(1).waitFor({ timeout: 20000 }).catch(() => {});
   check("home lists the saved records", (await page.getByRole("link", { name: /Ramesh Family Clinic|Sri Ram Diagnostics/ }).count()) >= 2);
 } catch (err) {
   check(`unexpected error: ${err.message.split("\n")[0]}`, false);

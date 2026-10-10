@@ -59,10 +59,11 @@ function Fact({ source, onOpen, title, children }: { source: Source; onOpen: (o:
       <button
         type="button"
         onClick={() => onOpen({ id: source.document_id, quote: source.quote, title })}
-        className="flex min-h-11 w-full items-start justify-between gap-3 rounded-control px-2 py-2 text-left transition-colors duration-150 hover:bg-primary-soft"
+        className="flex min-h-11 w-full flex-col gap-1 rounded-control px-2 py-2 text-left transition-colors duration-150 hover:bg-primary-soft sm:flex-row sm:items-start sm:justify-between sm:gap-3"
         aria-label={`${title}. Open source: ${source.facility ?? "document"}, ${day(source.date)}`}
       >
         <span className="min-w-0 flex-1">{children}</span>
+        {/* Phones: the source sits under the fact so the fact keeps the full width. */}
         <SourceKey source={source} />
       </button>
     </li>
@@ -347,7 +348,7 @@ export function DoctorView() {
                 <li key={d.id}>
                   <button type="button" onClick={() => setOpened({ id: d.id, quote: null, title: `${d.type_label}, ${d.facility ?? ""}` })} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-control px-2 text-left hover:bg-primary-soft">
                     <span><span className="font-semibold">{d.facility ?? d.type_label}</span> <span className="text-ink-2">{d.type_label}</span></span>
-                    <span className="text-meta font-semibold text-primary">{day(d.date)}</span>
+                    <span className="shrink-0 whitespace-nowrap text-meta font-semibold text-primary">{day(d.date)}</span>
                   </button>
                 </li>
               ))}

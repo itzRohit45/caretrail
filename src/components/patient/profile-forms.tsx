@@ -112,7 +112,8 @@ function AllergyFields({ state, initial, idPrefix }: { state: FormState; initial
       <ChoiceTiles
         name="severity"
         legend="How serious is it?"
-        columns="grid-cols-3"
+        // Three tiles do not fit a 360px phone; "Severe" takes its own full row there.
+        columns="grid-cols-2 sm:grid-cols-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1"
         defaultValue={initial?.severity}
         error={err.severity}
         options={SEVERITIES.map((v) => ({
