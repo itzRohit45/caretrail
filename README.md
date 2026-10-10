@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://caretrail-tan.vercel.app"><b>Live app: caretrail-tan.vercel.app</b></a>
+  &nbsp;·&nbsp; <a href="VIDEO_LINK_HERE"><b>Demo video</b></a>
   &nbsp;·&nbsp; Test account: <code>caretrail.test@example.com</code> / <code>CareTrail@2026</code>
 </p>
 
@@ -166,24 +167,6 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 - **Download my record (FHIR):** the whole record as a FHIR R4 file (Patient, Condition, MedicationStatement, Observation with LOINC codes where certain, AllergyIntolerance), each fact noting its source, for any hospital system.
 - **Privacy policy** at [/privacy](https://caretrail-tan.vercel.app/privacy).
 - Works on phones first (checked at 360 and 390 px), in light and dark mode.
-
-### Every feature is tested
-
-| Feature | Browser test |
-|---|---|
-| Sign up and log in (email or Google), profile, allergies, emergency contact | `phase-a` |
-| Upload (photos, PDFs, several pages, duplicate block), AI extraction with confidence and source text, check screen beside the original, brands to generics, units, dosing shorthand, days from quantity | `phase-b`, `phase-m` |
-| Consultation notes without a file; real handwritten prescriptions | `phase-n` |
-| Timeline with filters, lab trends with normal ranges | `phase-c` |
-| Safety checks across doctors, finished courses, Test Saver | `phase-d`, `phase-o` |
-| Scoped, expiring share links (QR, optional code, revoke within seconds), access history and live viewer, source-linked doctor brief | `phase-ef` |
-| Emergency QR, public card, lock-screen image, wallet card, scan alerts | `phase-g` |
-| Emergency full access: logged 2-hour access, contact and patient emailed, revocable | `phase-i` |
-| Since your last view | `phase-j` |
-| Doctor write-back: notes and prescriptions, only where allowed | `phase-k` |
-| FHIR R4 export | `phase-l` |
-| Alert centre | `phase-p` |
-| Test account shows every card with real uploads | `phase-h` |
 
 ## How it works
 
