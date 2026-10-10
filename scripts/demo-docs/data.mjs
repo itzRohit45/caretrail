@@ -14,6 +14,10 @@ const karthik = { doctor: "Dr. Karthik Balaji", quals: "MD (Pulmonary Medicine)"
 const vikram = { doctor: "Dr. Vikram Srinivasan", quals: "MD, DM (Cardiology)", reg: "TNMC 45690", clinic: "Sri Venkateswara Heart Institute", address: "7, GST Road, Guindy, Chennai 600032", phone: "044 2234 8800" };
 const farook = { doctor: "Dr. M. Farook", quals: "MBBS", reg: "TNMC 73366", clinic: "Farook Clinic", address: "56, Anna Salai, Saidapet, Chennai 600015", phone: "044 2435 1207" };
 
+const meena = { doctor: "Dr. Meena Raghavan", quals: "MBBS, MD (General Medicine)", reg: "TNMC 70421", clinic: "Sunrise Family Clinic", address: "17, Arcot Road, Vadapalani, Chennai 600026", phone: "044 2362 4410" };
+const arvind = { doctor: "Dr. Arvind Kumar", quals: "MD, DM (Cardiology)", reg: "TNMC 58830", clinic: "Lotus Heart & Diabetes Centre", address: "4, Harrington Road, Chetpet, Chennai 600031", phone: "044 2836 9055" };
+const tester = { name: "Test Patient", age: 52, sex: "M" };
+
 const sriRam = { lab: "Sri Ram Diagnostics", address: "112, Royapettah High Road, Mylapore, Chennai 600004", phone: "044 2498 7700", pathologist: "Dr. Kavitha Rao, MD (Pathology)" };
 const lister = { lab: "Lister Labs", address: "5, Usman Road, T. Nagar, Chennai 600017", phone: "044 2815 3300", pathologist: "Dr. R. Shankar, MD (Biochemistry)" };
 const medall = { lab: "Medall Diagnostics Centre", address: "2nd Avenue, Anna Nagar, Chennai 600040", phone: "044 2626 1144", pathologist: "Dr. Nirmala Devi, MD (Pathology)" };
@@ -23,6 +27,16 @@ const kaveri = { hospital: "Kaveri Multispeciality Hospital", address: "81, Latt
 const svhi = { hospital: "Sri Venkateswara Heart Institute", address: "7, GST Road, Guindy, Chennai 600032", phone: "044 2234 8800" };
 
 export const documents = [
+  // ------- Overlap test: the same medicines under other brands, from two doctors -------
+  { patient: "overlap-test", file: "rx-1-sunrise-clinic-oct-2026", kind: "rx", as: "pdf", ...meena, who: tester, date: "06/10/2026", vitals: "BP: 142/90 mmHg   Wt: 81 kg",
+    dx: "T2DM. HTN. Old MI, on antiplatelet.",
+    meds: [["Tab. Glycomet 500 mg", "1-0-1", "x 30 days", "After food"], ["Tab. Telma 40 mg", "1-0-0", "x 30 days", ""], ["Tab. Atorva 10 mg", "0-0-1", "x 30 days", "After food"], ["Tab. Clopilet 75 mg", "0-1-0", "x 30 days", "After lunch"]],
+    advice: "Check fasting sugar after 2 weeks." },
+  { patient: "overlap-test", file: "rx-2-lotus-centre-oct-2026-photo", kind: "rx", as: "photo", hand: true, ...arvind, who: tester, date: "09/10/2026", vitals: "BP 146/92",
+    dx: "Known DM, HTN. Dyslipidaemia. Acidity.",
+    meds: [["Tab Gluconorm 500", "1-0-1", "x 30 days", "after food"], ["Tab Telmikind 40", "1-0-0", "x 30 days", ""], ["Tab Storvas 20", "0-0-1", "x 30 days", ""], ["Cap Omez 20", "1-0-0", "x 30 days", "before breakfast"]],
+    advice: "Review 1 month with lipid profile." },
+
   // ---------------- Ravi Kumar ----------------
   { patient: "ravi", file: "01-lab-hba1c-nov-2025", kind: "lab", as: "pdf", ...sriRam, who: ravi, refBy: "Dr. A. Suresh", date: "08/11/2025", labNo: "SRD-25-118420",
     sections: [{ title: "Biochemistry", rows: [

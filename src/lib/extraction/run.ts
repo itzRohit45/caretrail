@@ -85,7 +85,13 @@ export async function extractDocument(file: { hash: string; data: Buffer; mimeTy
   const models = serverEnv().GEMINI_MODELS.split(",").map((m) => m.trim()).filter(Boolean).slice(0, 2);
   if (!models.length) return { ok: false, reason: "unavailable" };
   const started = Date.now();
-  const result = await race(models, file);
+  let result = await race(models, file);
+  // Both models refusing at once (503 "high demand") is usually over in seconds: one more round,
+  // only when the refusals came back fast enough to stay inside the route's 60 s limit.
+  if (!result.ok && result.reason === "unavailable" && Date.now() - started < 8_000) {
+    await new Promise((r) => setTimeout(r, 2_000));
+    result = await race(models, file);
+  }
   if (!result.ok) return result;
   await admin.from("extraction_cache").upsert({ file_hash: file.hash, model: result.model, result: result.data });
   console.info(`extraction ok model=${result.model} ms=${Date.now() - started}`);

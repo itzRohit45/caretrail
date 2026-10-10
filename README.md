@@ -58,7 +58,7 @@ Create the test account (runs the real extraction pipeline on `demo-docs/ravi/`)
 
 **Google sign-in (optional):** in Google Cloud Console create an OAuth client (Web application) with the redirect URI `https://<project>.supabase.co/auth/v1/callback`; in Supabase, *Authentication > Sign In / Providers > Google*, paste the client ID and secret and enable it; in *Authentication > URL Configuration* add `https://<your-site>/auth/callback` to the redirect URLs. The *Continue with Google* button appears by itself once the provider is on.
 
-Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (51), browser tests in `scripts/e2e/` (`phase-a` to `phase-n`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
+Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (51), browser tests in `scripts/e2e/` (`phase-a` to `phase-o`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
 
 ## Try it
 
@@ -73,6 +73,7 @@ The account is shared, so other testers may add records or links too. Rebuild it
 - **Home:** medicine warnings across doctors (penicillin allergy clash, metformin prescribed twice, an interaction), Taking now, Tests still valid with a rupee estimate, Latest results with each lab's printed range.
 - **Add a record:** upload a photo or PDF; several photos of one report become one record; or choose *Consultation notes* and just type what the doctor said (a photo is optional). Try `demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg` (in the repo): the check screen shows how often and for how many days, worked out from the quantity written on the paper.
 - **Medicines:** courses whose written days have passed move to *Finished courses* by themselves.
+- **Duplicate medicines across doctors:** upload both files in `demo-docs/overlap-test/` (a typed and a handwritten prescription from two doctors, same medicines under other brands). Medicines then shows *Metformin, Telmisartan and Atorvastatin prescribed twice* and a red *Major interaction: Clopilet and Omez*.
 - **Sharing:** create a link (scope, expiry, optional code; doctors can add notes and prescriptions unless you untick it). Open it in another browser as a doctor: the one-screen brief, every fact opening its source. Notes the doctor leaves appear on Home, Sharing and Access history. *End access* stops the doctor's screen within seconds.
 - **Since your last view:** open the same link twice as the same doctor (name and registration number) with a new record added in between.
 - **Emergency card:** create the QR on *Emergency card*, open the link on another device; *Request full record* is the logged 2-hour break-glass.
