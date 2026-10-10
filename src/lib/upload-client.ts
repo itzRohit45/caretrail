@@ -67,3 +67,52 @@ export async function combinePages(files: File[], name: string): Promise<File> {
   const bytes = await out.save();
   return new File([new Blob([bytes as BlobPart])], name, { type: "application/pdf" });
 }
+
+export type ConsultationNotes = { date: string; doctor: string; clinic: string; notes: string };
+
+/**
+ * Typed consultation notes become a real text PDF (page 1), so they are read, stored, shared and
+ * highlighted exactly like an uploaded document. Characters the PDF font cannot draw become "?".
+ */
+export async function notesToPdf(n: ConsultationNotes): Promise<File> {
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const doc = await PDFDocument.create({ updateMetadata: false });
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const clean = (t: string) => t.replace(/[^\x20-\x7E\xA0-\xFF\n]/g, "?");
+  const [W, H, M, SIZE, LINE] = [595, 842, 56, 12, 17];
+  let page = doc.addPage([W, H]);
+  let y = H - M;
+  const write = (text: string, f = font, size = SIZE) => {
+    if (y < M) {
+      page = doc.addPage([W, H]);
+      y = H - M;
+    }
+    page.drawText(text, { x: M, y, size, font: f, color: rgb(0.1, 0.1, 0.12) });
+    y -= size === SIZE ? LINE : size + 8;
+  };
+  const wrap = (text: string) => {
+    for (const para of clean(text).split("\n")) {
+      let line = "";
+      for (const word of para.split(/\s+/)) {
+        const next = line ? `${line} ${word}` : word;
+        if (font.widthOfTextAtSize(next, SIZE) > W - 2 * M && line) {
+          write(line);
+          line = word;
+        } else line = next;
+      }
+      write(line);
+    }
+  };
+  const [yyyy, mm, dd] = n.date.split("-");
+  write("Consultation notes", bold, 18);
+  if (n.date) write(`Date: ${dd}/${mm}/${yyyy}`);
+  if (n.doctor.trim()) write(`Doctor: ${clean(n.doctor.trim())}`);
+  if (n.clinic.trim()) write(`Clinic: ${clean(n.clinic.trim())}`);
+  y -= 8;
+  wrap(n.notes.trim());
+  y -= 8;
+  write("Typed by the patient in CareTrail.", font, 10);
+  const bytes = await doc.save();
+  return new File([new Blob([bytes as BlobPart])], "Consultation notes.pdf", { type: "application/pdf" });
+}

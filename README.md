@@ -24,7 +24,7 @@ Every requirement in the PRD's Must and Should lists, plus the FHIR export stret
 
 | PRD | Feature | Test |
 |---|---|---|
-| FR-01 | Sign up, log in, profile, allergies, emergency contact | `phase-a` |
+| FR-01 | Sign up, log in (email, or Google once enabled), profile, allergies, emergency contact | `phase-a` |
 | FR-02, FR-03, FR-04 | Upload (10 MB, PDF/JPG/PNG, duplicate block; several photos or PDFs of one report become one multi-page record; phone photos are shrunk on the device), AI extraction with confidence and source text, verify screen beside the original, normalisation (brands to generics, units, dosing shorthand) | `phase-b`, `phase-m` |
 | FR-05 | Timeline with condition, type and date filters; lab trends with normal ranges | `phase-c` |
 | FR-06, FR-07 | Safety checks across doctors (duplicates, interactions, allergy clashes); Test Saver | `phase-d` |
@@ -34,7 +34,8 @@ Every requirement in the PRD's Must and Should lists, plus the FHIR export stret
 | FR-13 | Since-last-visit view for a returning doctor | `phase-j` |
 | FR-14 | Doctor write-back: notes and prescriptions, only on links that allow it | `phase-k` |
 | FR-15 (Stretch) | FHIR R4 export (Patient, Condition, MedicationStatement, Observation with LOINC where certain, AllergyIntolerance), each fact noting its source | `phase-l` |
-| Demo | Try demo (private copy per visitor), sample doctor view, sample emergency card | `phase-h` |
+| Test account | Every card on the seeded test account shows the uploaded records | `phase-h` |
+| Records without a file | Consultation notes typed by the patient, with an optional prescription photo; handwritten prescriptions | `phase-n` |
 
 Accessibility: axe-core WCAG 2.1 AA on 18 screens, 0 violations (`scripts/e2e/audit.mjs`); every screen checked at 360 and 390 px (`scripts/e2e/mobile-shots.mjs`).
 
@@ -53,26 +54,39 @@ npm run gen-types                 # regenerates src/lib/db/types.ts from the liv
 npm run dev
 ```
 
-Seed the demo patients (runs the real extraction pipeline on `demo-docs/`): `npm run seed`.
+Create the test account (runs the real extraction pipeline on `demo-docs/ravi/`): `npm run seed:test-account`.
 
-Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (43), browser tests in `scripts/e2e/` (`phase-a` to `phase-m`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
+**Google sign-in (optional):** in Google Cloud Console create an OAuth client (Web application) with the redirect URI `https://<project>.supabase.co/auth/v1/callback`; in Supabase, *Authentication > Sign In / Providers > Google*, paste the client ID and secret and enable it; in *Authentication > URL Configuration* add `https://<your-site>/auth/callback` to the redirect URLs. The *Continue with Google* button appears by itself once the provider is on.
+
+Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (51), browser tests in `scripts/e2e/` (`phase-a` to `phase-n`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
 
 ## Try it
 
-- **Try demo:** on the landing or login page, choose *Try as Ravi*, *Lakshmi* or *Arun*. You get a private copy of a simulated patient (no sign-up).
-- **Doctor's view:** *Open a doctor's view* mints a real 1-hour link to Ravi's record. It is pre-filled as Ravi's diabetologist (Dr. A. Suresh, registration TNMC 61234), whose simulated last view was on 20 Aug 2026, so it opens on *Since your last view*: two new prescriptions from other doctors, the penicillin clash, the duplicate metformin and the rising HbA1c. Change the name to see the record as a new doctor.
-- **Emergency card:** *Open an emergency card* shows Arun's tier 1 card. At the bottom, *Request full record* is the tier 2 break-glass: enter a name, hospital and registration number to open the full record for 2 hours.
-- **Doctor write-back:** *Try as Ravi*, open *Sharing*, tick *Let the doctor add to my record* and create the link. Open it in another browser as a doctor: add a note and upload `demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg` (in the repo). The prescription goes through the same extraction and waits on the patient's Home, marked *Added by* the doctor, until the patient checks the doses.
-- **See break-glass from the patient's side:** *Try as Arun*, add your own email as the emergency contact in Profile, create the emergency QR in *Emergency card*, open the QR link on another device and request the full record. Your inbox gets the alert; Home, Sharing and Access history flag the access, and *End access* stops it.
+**Test account** (a simulated patient, Ravi Kumar, with 10 sample prescriptions, lab reports and a discharge summary already uploaded through the real pipeline):
 
-### How the demo data was made
-Twenty-four simulated documents (fictional Chennai clinics, labs and patients) were rendered as PDFs and phone-style photos (`scripts/demo-docs/build.mjs`, output in `demo-docs/`), then run through the same upload, AI extraction, normalisation and safety pipeline the app uses (`npm run seed`). Every field was saved exactly as the model read it; nothing was typed by hand. One fresh prescription (`demo-docs/fresh/`) is kept aside for a live upload.
+| Email | Password |
+|---|---|
+| `caretrail.test@example.com` | `CareTrail@2026` |
+
+The account is shared, so other testers may add records or links too. Rebuild it any time with `npm run seed:test-account`. Or create your own account (email, or *Continue with Google* once it is enabled in Supabase).
+
+- **Home:** medicine warnings across doctors (penicillin allergy clash, metformin prescribed twice, an interaction), Taking now, Tests still valid with a rupee estimate, Latest results with each lab's printed range.
+- **Add a record:** upload a photo or PDF; several photos of one report become one record; or choose *Consultation notes* and just type what the doctor said (a photo is optional). Try `demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg` (in the repo): the check screen shows how often and for how many days, worked out from the quantity written on the paper.
+- **Medicines:** courses whose written days have passed move to *Finished courses* by themselves.
+- **Sharing:** create a link (scope, expiry, optional code; doctors can add notes and prescriptions unless you untick it). Open it in another browser as a doctor: the one-screen brief, every fact opening its source. Notes the doctor leaves appear on Home, Sharing and Access history. *End access* stops the doctor's screen within seconds.
+- **Since your last view:** open the same link twice as the same doctor (name and registration number) with a new record added in between.
+- **Emergency card:** create the QR on *Emergency card*, open the link on another device; *Request full record* is the logged 2-hour break-glass.
+
+### How the test account was made
+Simulated documents (fictional Chennai clinics, labs and patients) were rendered as PDFs and phone-style photos (`scripts/demo-docs/build.mjs`, output in `demo-docs/`), then run through the same upload, AI extraction, normalisation and safety pipeline the app uses (`scripts/seed-test-account.mts`). Every field was saved exactly as the model read it; nothing was typed by hand. The most recent prescriptions are dated early October 2026 so their courses are still running.
 
 ### Known limits
-- The extraction model reports high confidence even on handwriting, so routing relies on the PRD rule that every medicine dose is checked by the patient.
+- Handwriting is read by the AI with varying success from one try to the next; every medicine dose and frequency always goes to the patient's check screen. When the model leaves a field empty, the dosing pattern and quantity are read from the line exactly as written.
+- Days are worked out from a written quantity only when it divides exactly by the doses a day (20 tablets at 1-0-1 = 10 days); bottles, creams and inhalers are never converted.
 - Interaction checks cover the medicines in the DDInter dataset; gliclazide, vildagliptin, teneligliptin, voglibose and cilnidipine are recognised but not covered.
-- Demo copies created by *Try demo* are not cleaned up automatically yet.
-- *Since your last view* compares clinical dates (document, test, start and stop dates) with the day of the doctor's previous view; a document uploaded later but dated before that view is not listed as new. It needs the same name and registration number as the earlier view; registration numbers are not verified against the medical council register.
+- *Since your last view* needs the same name and registration number as the earlier view; registration numbers are not verified against the medical council register.
+- Google sign-in needs the Google provider switched on in Supabase (see Setup); until then only email sign-in is shown.
+- Typed consultation notes are stored as a PDF in a standard font, so letters outside Latin script are replaced.
 
 ## Disclosures
 
@@ -94,7 +108,7 @@ Everything below was used to build CareTrail. No real patient data is used anywh
 | Brevo transactional email API | Emergency and break-glass alert emails |
 | Atkinson Hyperlegible Next / Mono (Braille Institute) and Source Serif 4 (Adobe), via Google Fonts | Body type chosen for low-vision readers; serif for headings and numbers |
 | Kalam (Google Fonts) | Handwriting style used only when generating the simulated demo prescriptions |
-| Photo by Wilfred Sequeira on Unsplash (Unsplash License) | Landing page portrait |
+| Portrait photo supplied by the team (source and licence to be confirmed by the team before public use) | Landing page portrait |
 | DDInter drug-drug interaction dataset (Xiong et al., Nucleic Acids Research 2022, ddinter.scbdd.com) | Interaction pairs and severity, filtered to the 55 curated generics (293 pairs); free for academic, non-commercial use |
 | Brand-to-generic map and test validity table | Hand-curated for this demo from publicly known Indian brand names and typical lab practice; not a clinical database |
 | Vercel | Hosting |

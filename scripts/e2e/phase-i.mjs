@@ -16,12 +16,12 @@ const check = (name, cond) => {
 };
 const seen = (loc, timeout = 30000) => loc.first().waitFor({ timeout }).then(() => true, () => false);
 
-// A private copy of Arun (full record), exactly as "Try as Arun" makes it, plus an emergency QR.
-const { data: template } = await admin.from("patients").select("id").eq("is_demo_template", true).eq("name", "Arun Prakash").single();
-const { data: created } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { demo: true, name: "Arun Prakash" } });
+// A patient with emergency details and an emergency QR.
+const { data: created } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name: "Arun Prakash" } });
 const userId = created.user.id;
-await admin.rpc("clone_demo_patient", { p_template: template.id, p_owner: userId });
 const { data: patient } = await admin.from("patients").select("id").eq("owner_user_id", userId).single();
+await admin.from("patients").update({ dob: "1958-06-02", sex: "male", blood_group: "O+", emergency_contact_name: "Karthik Prakash", emergency_contact_phone: "+91 98410 22764" }).eq("id", patient.id);
+await admin.from("allergies").insert({ patient_id: patient.id, substance: "Sulfa drugs", severity: "moderate", reaction: "Rash" });
 const token = randomBytes(32).toString("base64url");
 await admin.from("patients").update({ emergency_token_hash: createHash("sha256").update(token).digest("hex"), emergency_token_created_at: new Date().toISOString() }).eq("id", patient.id);
 

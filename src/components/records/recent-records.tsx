@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { FileText, Prescription, Flask, FirstAid, Scan, CaretRight } from "@phosphor-icons/react/ssr";
+import { FileText, Prescription, Flask, FirstAid, Scan, CaretRight, Notepad } from "@phosphor-icons/react/ssr";
 import { DOC_TYPE_LABELS } from "@/lib/schemas/documents";
 import { addedBy, formatDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import type { Row } from "@/lib/db/types";
 
-export const DOC_ICONS = { prescription: Prescription, lab_report: Flask, discharge_summary: FirstAid, scan_report: Scan, other: FileText } as const;
+export const DOC_ICONS = { prescription: Prescription, lab_report: Flask, consultation_note: Notepad, discharge_summary: FirstAid, scan_report: Scan, other: FileText } as const;
 
 type Doc = Pick<Row<"documents">, "id" | "type" | "doc_date" | "created_at" | "facility" | "doctor_name" | "extraction_status"> & { uploaded_by?: string };
 

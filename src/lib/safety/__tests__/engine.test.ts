@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { consolidate, courseEnded, safetyWarnings, type SafetyMed } from "../engine";
+import { consolidate, courseEnded, safetyWarnings, type SafetyMed, isCurrent } from "../engine";
 
 let n = 0;
 const med = (p: Partial<SafetyMed>): SafetyMed => ({
@@ -111,5 +111,17 @@ describe("courseEnded", () => {
     expect(courseEnded({ start_date: "2026-09-25", duration_days: 5 }, "2026-10-10")).toBe("2026-09-30");
     expect(courseEnded({ start_date: "2026-09-25", duration_days: 30 }, "2026-10-10")).toBeNull();
     expect(courseEnded({ start_date: "2026-09-25", duration_days: null }, "2026-10-10")).toBeNull();
+  });
+});
+
+describe("current medicines", () => {
+  it("drops a course once its written days have passed", () => {
+    const m = { active: true, start_date: "2026-03-04", duration_days: 10 };
+    expect(isCurrent(m, "2026-03-10")).toBe(true);
+    expect(isCurrent(m, "2026-10-10")).toBe(false);
+  });
+  it("keeps medicines with no written length, and never counts stopped ones", () => {
+    expect(isCurrent({ active: true, start_date: "2025-01-01", duration_days: null }, "2026-10-10")).toBe(true);
+    expect(isCurrent({ active: false, start_date: "2026-10-01", duration_days: 30 }, "2026-10-10")).toBe(false);
   });
 });

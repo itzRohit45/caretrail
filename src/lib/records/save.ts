@@ -6,6 +6,7 @@ import { buildBrandIndex, categoriesFor, matchBrand, type GenericRow } from "@/l
 import { LAB_CATEGORY, normaliseValue, parseNumber, parseRange, splitBloodPressure, testCode } from "@/lib/normalise/labs";
 import { conditionCategory } from "@/lib/normalise/conditions";
 import { toIsoDate } from "@/lib/normalise/dates";
+import { readDosing } from "@/lib/normalise/frequency";
 
 type Db = SupabaseClient<Database>;
 
@@ -27,8 +28,8 @@ export function payloadFromExtraction(x: Extraction): VerifyPayload {
     medications: x.medications.map((m) => ({
       brand_name: m.brand_name,
       dose: m.strength ?? null,
-      frequency: m.frequency ?? null,
-      duration_days: m.duration_days ?? null,
+      frequency: readDosing(m).frequency,
+      duration_days: readDosing(m).duration_days,
       source_text: m.source_text,
       confidence: m.confidence,
       patient_verified: false,

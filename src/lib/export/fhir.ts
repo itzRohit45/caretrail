@@ -21,7 +21,7 @@ const LOINC: Record<string, { code: string; display: string; vital?: boolean }> 
   BP_DIA: { code: "8462-4", display: "Diastolic blood pressure", vital: true },
 };
 
-const TYPE_LABEL: Record<string, string> = { prescription: "Prescription", lab_report: "Lab report", discharge_summary: "Discharge summary", scan_report: "Scan report", other: "Document" };
+const TYPE_LABEL: Record<string, string> = { prescription: "Prescription", lab_report: "Lab report", discharge_summary: "Discharge summary", scan_report: "Scan report", consultation_note: "Consultation notes", other: "Document" };
 
 type Doc = Pick<Row<"documents">, "id" | "type" | "doc_date" | "created_at" | "facility" | "doctor_name">;
 export type FhirInput = {

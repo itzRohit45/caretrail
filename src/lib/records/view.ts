@@ -7,6 +7,8 @@ export type ReviewMed = {
   dose: string;
   frequency: string;
   duration_days: number | null;
+  /** Shown under Days when the days were worked out from the written quantity. */
+  days_note?: string;
   source_text: string;
   confidence: number | null;
   reasons: CheckReason[];

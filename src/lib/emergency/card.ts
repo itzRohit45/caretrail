@@ -1,7 +1,7 @@
 import "server-only";
 import { adminClient } from "@/lib/supabase/admin";
-import { ageFrom } from "@/lib/format";
-import { consolidate, type SafetyMed } from "@/lib/safety/engine";
+import { ageFrom, todayIST } from "@/lib/format";
+import { consolidate, isCurrent, type SafetyMed } from "@/lib/safety/engine";
 import { decodeFrequency } from "@/lib/normalise/frequency";
 import { CONDITION_LABELS, preferredConditionName } from "@/lib/normalise/conditions";
 import type { Row } from "@/lib/db/types";
@@ -27,7 +27,8 @@ export async function buildEmergencyCard(patient: Row<"patients">): Promise<Emer
     db.from("medications").select("*").eq("patient_id", patient.id).eq("active", true),
     db.from("conditions").select("name, category").eq("patient_id", patient.id).eq("status", "active"),
   ]);
-  const groups = consolidate((meds.data ?? []) as SafetyMed[]);
+  const today = todayIST();
+  const groups = consolidate((meds.data ?? []).filter((m) => isCurrent(m, today)) as SafetyMed[]);
   const conditions = MAJOR.flatMap((cat) => {
     const names = (conds.data ?? []).filter((c) => c.category === cat).map((c) => c.name);
     if (!names.length) return [];

@@ -47,8 +47,8 @@ try {
     ["Prescription", "demo-docs/ravi/02-rx-suresh-nov-2025.pdf"],
     ["Discharge summary", "demo-docs/ravi/03-discharge-kaveri-mar-2026.pdf"],
     ["Lab report", "demo-docs/ravi/04-lab-lipid-mar-2026.pdf"],
-    ["Lab report", "demo-docs/ravi/08-lab-hba1c-sep-2026.pdf"],
-    ["Lab report", "demo-docs/ravi/09-lab-fbs-medall-sep-2026.pdf"],
+    ["Lab report", "demo-docs/ravi/08-lab-hba1c-oct-2026.pdf"],
+    ["Lab report", "demo-docs/ravi/09-lab-fbs-medall-oct-2026.pdf"],
   ]) {
     await addRecord(kind, file);
   }
@@ -56,7 +56,7 @@ try {
 
   await page.goto(`${BASE}/records`);
   const firstMonth = await page.locator("main h2").first().textContent();
-  check(`newest month first (got "${firstMonth}")`, /September 2026/.test(firstMonth ?? ""));
+  check(`newest month first (got "${firstMonth}")`, /October 2026/.test(firstMonth ?? ""));
   check("two labs on the same day both shown", (await page.getByRole("link", { name: /Sri Ram Diagnostics|Medall Diagnostics/ }).count()) >= 3);
   await page.screenshot({ path: `${shots}/timeline-desktop.png`, fullPage: true, caret: "initial" });
 
@@ -77,7 +77,7 @@ try {
   check("latest HbA1c and change shown", await seen(hba1c.getByText(/Up 0\.3 %/)));
   const fbs = page.locator("section", { has: page.getByRole("heading", { name: "Fasting glucose", exact: true }) });
   await fbs.getByText("Show all values").click();
-  check("same-day fasting values from two labs both charted", (await fbs.locator("tbody tr", { hasText: "19 Sept 2026" }).count()) === 2);
+  check("same-day fasting values from two labs both charted", (await fbs.locator("tbody tr", { hasText: "3 Oct 2026" }).count()) === 2);
   check("charts with no data show a helpful empty state", await seen(page.getByText(/No TSH results yet/)));
   await page.screenshot({ path: `${shots}/trends-desktop.png`, fullPage: true, caret: "initial" });
   const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

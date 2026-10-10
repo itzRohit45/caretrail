@@ -99,10 +99,12 @@ function scan(d) {
 
 const render = { rx, lab, discharge, scan };
 
-await rm(OUT, { recursive: true, force: true });
+// ONLY=file1,file2 rebuilds just those documents and leaves the rest untouched.
+const only = process.env.ONLY?.split(",");
+if (!only) await rm(OUT, { recursive: true, force: true });
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await browser.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: 2 });
-for (const d of documents) {
+for (const d of documents.filter((x) => !only || only.includes(x.file))) {
   const dir = `${OUT}${d.patient}/`;
   await mkdir(dir, { recursive: true });
   const small = d.kind === "rx";

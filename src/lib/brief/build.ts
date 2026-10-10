@@ -4,7 +4,7 @@ import { ageFrom, todayIST } from "@/lib/format";
 import { decodeFrequency } from "@/lib/normalise/frequency";
 import { categoriesFor } from "@/lib/normalise/brands";
 import { CONDITION_LABELS, preferredConditionName } from "@/lib/normalise/conditions";
-import { consolidate, safetyWarnings, type SafetyMed, type SafetyWarning } from "@/lib/safety/engine";
+import { consolidate, isCurrent, safetyWarnings, type SafetyMed, type SafetyWarning } from "@/lib/safety/engine";
 import { recentTests, type RecentTest } from "@/lib/safety/test-saver";
 import { describeScope, documentInScope, factInScope, labCategories, scopeFromLink } from "@/lib/sharing/scope";
 import { DOC_TYPE_LABELS } from "@/lib/schemas/documents";
@@ -89,7 +89,7 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
   const medsInScope = medsRes.data!.filter(
     (m) => docById.has(m.source_document_id) && factInScope({ categories: categoriesFor(m.generics, classes), date: m.start_date }, scope, today),
   ) as (SafetyMed & Row<"medications">)[];
-  const meds = medsInScope.filter((m) => m.active);
+  const meds = medsInScope.filter((m) => isCurrent(m, today));
   const labs = labsRes.data!.filter((l) => docById.has(l.source_document_id) && factInScope({ categories: labCategories(l.test_code), date: l.test_date }, scope, today));
   const conds = condsRes.data!.filter((c) => docById.has(c.source_document_id) && factInScope({ categories: c.category ? [c.category] : [], date: c.diagnosed_on }, scope, today));
 
@@ -141,10 +141,14 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
 
   let since_last_visit: SinceLastVisit | null = null;
   if (previousVisitAt) {
-    // Clinical dates (document, test, start, stop), compared with the day of the previous view.
+    // New = its document was added after the previous view, or is dated after that day.
     const since = istDate(previousVisitAt);
     const isNew = (date: string | null) => date !== null && date > since;
     const dateOfDoc = (id: string) => docDate(docById.get(id)!);
+    const docIsNew = (id: string) => {
+      const d = docById.get(id);
+      return Boolean(d) && (docDate(d!) > since || d!.created_at > previousVisitAt);
+    };
     const medDate = (m: SafetyMed) => m.start_date ?? dateOfDoc(m.source_document_id);
     const medDetail = (m: SafetyMed) => [m.dose, decodeFrequency(m.frequency) ?? m.frequency].filter(Boolean).join(", ");
     const medSource = (m: SafetyMed) => source(m.source_document_id, (m as Row<"medications">).source_text);
@@ -152,8 +156,8 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
     const started: SinceLastVisit["started"] = [];
     const changed: SinceLastVisit["changed"] = [];
     for (const g of groups) {
-      if (!isNew(medDate(g.current))) continue;
-      const before = g.history.find((h) => !isNew(medDate(h)));
+      if (!docIsNew(g.current.source_document_id)) continue;
+      const before = g.history.find((h) => !docIsNew(h.source_document_id));
       if (!before) {
         started.push({ brand: g.current.brand_name, generic: g.current.generic_name, detail: medDetail(g.current), prescriber: g.current.prescriber, date: medDate(g.current), source: medSource(g.current) });
       } else if (medDetail(before) !== medDetail(g.current)) {
@@ -170,12 +174,12 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
       const dia = l.test_code === "BP_SYS" ? labs.find((x) => x.test_code === "BP_DIA" && x.source_document_id === l.source_document_id && x.test_date === l.test_date) : null;
       return dia ? `${l.value_normalised ?? l.value}/${dia.value_normalised ?? dia.value}` : String(l.value_normalised ?? l.value ?? l.value_text ?? "");
     };
-    const newLabCodes = [...new Set(labs.filter((l) => isNew(l.test_date) && l.test_code !== "BP_DIA").map((l) => l.test_code ?? l.test_name))];
+    const newLabCodes = [...new Set(labs.filter((l) => docIsNew(l.source_document_id) && l.test_code !== "BP_DIA").map((l) => l.test_code ?? l.test_name))];
     const sinceLabs = newLabCodes
       .map((code) => {
         const rows = labs.filter((l) => (l.test_code ?? l.test_name) === code).sort(byDateDesc);
         const last = rows[0];
-        const prev = rows.find((r) => !isNew(r.test_date));
+        const prev = rows.find((r) => !docIsNew(r.source_document_id));
         const ref = last.test_code && last.test_code !== "BP_SYS" ? ranges.get(last.test_code) : null;
         const v = last.value_normalised;
         return {
@@ -192,23 +196,23 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
       .sort((a, b) => Number(titles.has(b.code)) - Number(titles.has(a.code)) || b.date.localeCompare(a.date));
 
     const condDate = (c: Row<"conditions">) => c.diagnosed_on ?? dateOfDoc(c.source_document_id);
-    const knownBefore = new Set(conds.filter((c) => !isNew(condDate(c))).map((c) => c.category ?? c.name.toLowerCase()));
+    const knownBefore = new Set(conds.filter((c) => !docIsNew(c.source_document_id)).map((c) => c.category ?? c.name.toLowerCase()));
     const seenNames = new Set<string>();
     const diagnoses = conds
-      .filter((c) => isNew(condDate(c)) && !knownBefore.has(c.category ?? c.name.toLowerCase()))
+      .filter((c) => docIsNew(c.source_document_id) && !knownBefore.has(c.category ?? c.name.toLowerCase()))
       .sort((a, b) => condDate(b).localeCompare(condDate(a)))
       .filter((c) => !seenNames.has(c.name.toLowerCase()) && Boolean(seenNames.add(c.name.toLowerCase())))
       .map((c) => ({ name: c.name, date: condDate(c), source: source(c.source_document_id, c.source_text) }));
 
     since_last_visit = {
       at: previousVisitAt,
-      warnings: warnings.filter((w) => w.level !== "info" && w.items.some((i) => docById.has(i.documentId) && isNew(dateOfDoc(i.documentId)))),
+      warnings: warnings.filter((w) => w.level !== "info" && w.items.some((i) => docIsNew(i.documentId))),
       started,
       changed,
       stopped,
       labs: sinceLabs,
       diagnoses,
-      documents: docs.filter((d) => isNew(docDate(d))).map(briefDoc).sort((a, b) => b.date.localeCompare(a.date)),
+      documents: docs.filter((d) => docIsNew(d.id)).map(briefDoc).sort((a, b) => b.date.localeCompare(a.date)),
     };
   }
 

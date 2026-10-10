@@ -17,10 +17,8 @@ const check = (name, cond) => {
 };
 const seen = (loc, timeout = 30000) => loc.first().waitFor({ timeout }).then(() => true, () => false);
 
-const { data: template } = await admin.from("patients").select("id").eq("is_demo_template", true).eq("name", "Ravi Kumar").single();
-const { data: created } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { demo: true, name: "Ravi Kumar" } });
+const { data: created } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name: "Ravi Kumar" } });
 const userId = created.user.id;
-await admin.rpc("clone_demo_patient", { p_template: template.id, p_owner: userId });
 const { data: patient } = await admin.from("patients").select("id").eq("owner_user_id", userId).single();
 // A second link without write-back, to prove the server refuses it.
 const plainToken = randomBytes(32).toString("base64url");
@@ -41,8 +39,7 @@ try {
   await page.getByLabel("Who is it for?").fill("Dr. Meera, today's visit");
   await page.locator("label", { hasText: "Everything" }).click();
   await page.locator("label", { hasText: "1 hour" }).click();
-  check("write-back is off unless the patient turns it on", !(await page.getByRole("checkbox", { name: /Let the doctor add to my record/ }).isChecked()));
-  await page.getByText("Let the doctor add to my record").click();
+  check("notes and prescriptions allowed by default, and can be switched off", await page.getByRole("checkbox", { name: /Let the doctor add notes and prescriptions/ }).isChecked());
   const [resp] = await Promise.all([page.waitForResponse((r) => r.url().endsWith("/api/shares") && r.request().method() === "POST"), page.getByRole("button", { name: "Create link" }).click()]);
   const share = (await resp.json()).data;
   check("active link says the doctor can add", await seen(page.getByText("Can add notes and prescriptions")));
@@ -82,6 +79,9 @@ try {
   // Patient side.
   await page.goto(`${BASE}/home`);
   check("Home shows the doctor's note", await seen(page.getByText(/Stop Mox: penicillin allergy/)));
+  await page.goto(`${BASE}/sharing`);
+  check("Sharing lists the doctor's note", await seen(page.getByText(/Stop Mox: penicillin allergy/)));
+  await page.goto(`${BASE}/home`);
   check("Home lists the upload as added by the doctor", await seen(page.getByText("Added by Dr. Meera Iyer")));
   await page.screenshot({ path: `${shots}/write-back-home-desktop.png`, fullPage: true, caret: "initial" });
   await page.goto(`${BASE}/records/${upload.id}`);
@@ -90,6 +90,17 @@ try {
   check("after saving, the record is marked Added by the doctor", await seen(page.getByText("Added by Dr. Meera Iyer"), 30000));
   const { count: after } = await admin.from("medications").select("id", { count: "exact", head: true }).eq("source_document_id", upload.id);
   check(`facts saved once the patient confirmed (${after} medicines)`, after > 0);
+  // Notes are stored, so they are still there after logging out and in again.
+  await page.goto(`${BASE}/home`);
+  await page.getByRole("button", { name: /Log out/ }).click();
+  await page.waitForURL(`${BASE}/`);
+  await page.goto(`${BASE}/login`);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Log in" }).click();
+  await page.waitForURL("**/home");
+  await page.goto(`${BASE}/sharing`);
+  check("note still on Sharing after logging in again", await seen(page.getByText(/Stop Mox: penicillin allergy/)));
   await page.goto(`${BASE}/sharing/history`);
   check("access history: note", await seen(page.getByText("Dr. Meera Iyer added a note")));
   check("access history: prescription", await seen(page.getByText("Dr. Meera Iyer added a prescription for you to check")));

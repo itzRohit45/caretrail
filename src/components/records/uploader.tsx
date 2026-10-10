@@ -7,7 +7,9 @@ import { Camera, FilePlus, FileText, ImageSquare, CheckCircle, CircleNotch, Arro
 import { buttonClass } from "@/components/ui/button";
 import { ACCEPTED_TYPES, DOC_TYPES, DOC_TYPE_LABELS, MAX_UPLOAD_BYTES } from "@/lib/schemas/documents";
 import { cn } from "@/lib/cn";
-import { combinePages, putWithProgress, sha256, shrinkPhoto } from "@/lib/upload-client";
+import { combinePages, notesToPdf, putWithProgress, sha256, shrinkPhoto, type ConsultationNotes } from "@/lib/upload-client";
+import { inputClass } from "@/components/ui/field";
+import { todayIST } from "@/lib/format";
 
 type DocType = (typeof DOC_TYPES)[number];
 type Phase =
@@ -26,6 +28,10 @@ export function Uploader() {
   const router = useRouter();
   const [type, setType] = useState<DocType | null>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [notes, setNotes] = useState<ConsultationNotes>(() => ({ date: todayIST(), doctor: "", clinic: "", notes: "" }));
+  const typed = type === "consultation_note";
+  // Consultation notes can be the whole record; a photo of the prescription is optional.
+  const ready = Boolean(type) && (files.length > 0 || (typed && notes.notes.trim().length >= 10));
   const [phase, setPhase] = useState<Phase>({ name: "pick" });
   const camera = useRef<HTMLInputElement>(null);
   const picker = useRef<HTMLInputElement>(null);
@@ -51,12 +57,17 @@ export function Uploader() {
   }
 
   async function upload() {
-    if (!files.length || !type) return;
+    if (!ready || !type) return;
     try {
       setPhase({ name: "hashing" });
       let file: File;
       try {
-        file = files.length === 1 ? await shrinkPhoto(files[0]) : await combinePages(files, `${DOC_TYPE_LABELS[type]} (${files.length} pages).pdf`);
+        if (typed && notes.notes.trim()) {
+          const page = await notesToPdf(notes);
+          file = files.length ? await combinePages([page, ...files], `Consultation notes (${files.length + 1} pages).pdf`) : page;
+        } else {
+          file = files.length === 1 ? await shrinkPhoto(files[0]) : await combinePages(files, `${DOC_TYPE_LABELS[type]} (${files.length} pages).pdf`);
+        }
       } catch {
         return setPhase({ name: "error", message: "One of the files could not be opened. A protected PDF or an unusual photo format can cause this; try a photo instead." });
       }
@@ -97,7 +108,7 @@ export function Uploader() {
 
   if (busy) {
     const steps = [
-      { label: files.length > 1 ? `Putting ${files.length} pages together` : "Preparing the file", done: phase.name !== "hashing" },
+      { label: typed && notes.notes.trim() ? "Preparing your notes" : files.length > 1 ? `Putting ${files.length} pages together` : "Preparing the file", done: phase.name !== "hashing" },
       { label: phase.name === "uploading" ? `Uploading, ${phase.percent}%` : "Uploading", done: phase.name === "reading" },
       { label: "Reading your document", done: false },
     ];
@@ -154,9 +165,37 @@ export function Uploader() {
         </div>
       </section>
 
+      {typed ? (
+        <section aria-labelledby="notes-title" className="space-y-4 rounded-card border border-rule bg-sheet p-5 sm:p-7">
+          <div>
+            <h2 id="notes-title" className="text-title font-bold">Write the notes</h2>
+            <p className="mt-1 text-ink-2">What the doctor told you. CareTrail reads it like a document, and you check what it found.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="cn-date" className="mb-1 block font-semibold">Date of the visit</label>
+              <input id="cn-date" type="date" max={todayIST()} value={notes.date} onChange={(e) => setNotes({ ...notes, date: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor="cn-doctor" className="mb-1 block font-semibold">Doctor <span className="font-normal text-ink-3">(optional)</span></label>
+              <input id="cn-doctor" value={notes.doctor} maxLength={80} onChange={(e) => setNotes({ ...notes, doctor: e.target.value })} autoComplete="off" className={inputClass} />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="cn-clinic" className="mb-1 block font-semibold">Clinic or hospital <span className="font-normal text-ink-3">(optional)</span></label>
+            <input id="cn-clinic" value={notes.clinic} maxLength={120} onChange={(e) => setNotes({ ...notes, clinic: e.target.value })} autoComplete="off" className={inputClass} />
+          </div>
+          <div>
+            <label htmlFor="cn-notes" className="mb-1 block font-semibold">Notes</label>
+            <p id="cn-notes-help" className="mb-2 text-dense text-ink-2">For example: Diagnosis: viral fever. Tab Dolo 650 mg 1-0-1 for 3 days. Review after 1 week.</p>
+            <textarea id="cn-notes" rows={7} maxLength={4000} value={notes.notes} onChange={(e) => setNotes({ ...notes, notes: e.target.value })} aria-describedby="cn-notes-help" className={cn(inputClass, "min-h-40 py-3")} />
+          </div>
+        </section>
+      ) : null}
+
       <section aria-labelledby="file-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-7">
-        <h2 id="file-title" className="text-title font-bold">Add the file</h2>
-        <p className="mt-1 text-ink-2">A clear photo or a PDF. Several pages? Add a photo of each page; they stay together as one record.</p>
+        <h2 id="file-title" className="text-title font-bold">{typed ? "Photo of the prescription (optional)" : "Add the file"}</h2>
+        <p className="mt-1 text-ink-2">{typed ? "If the doctor also wrote a prescription, add a photo. It is kept with your notes." : "A clear photo or a PDF. Several pages? Add a photo of each page; they stay together as one record."}</p>
         <input ref={camera} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => { choose(e.target.files); e.target.value = ""; }} />
         <input ref={picker} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => { choose(e.target.files); e.target.value = ""; }} />
 
@@ -213,7 +252,7 @@ export function Uploader() {
                 Open it
               </Link>
             ) : null}
-            {phase.retry && files.length && type ? (
+            {phase.retry && ready ? (
               <button type="button" onClick={upload} className={buttonClass("secondary", "dense")}>
                 <ArrowCounterClockwise aria-hidden className="size-5" />
                 Try again
@@ -224,10 +263,10 @@ export function Uploader() {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button type="button" onClick={upload} disabled={!files.length || !type} className={buttonClass("primary")}>
-          Upload record
+        <button type="button" onClick={upload} disabled={!ready} className={buttonClass("primary")}>
+          {typed && !files.length ? "Save notes" : "Upload record"}
         </button>
-        {!type || !files.length ? <p className="text-ink-2">{!type ? "Choose what it is first." : "Then add the file."}</p> : null}
+        {!ready ? <p className="text-ink-2">{!type ? "Choose what it is first." : typed ? "Write the notes (or add a photo)." : "Then add the file."}</p> : null}
       </div>
     </div>
   );

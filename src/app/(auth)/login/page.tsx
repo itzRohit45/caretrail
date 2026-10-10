@@ -3,13 +3,15 @@ import Link from "next/link";
 import { LoginForm } from "@/components/auth/auth-forms";
 import { Alert } from "@/components/ui/alert";
 import { safeNext } from "@/lib/schemas/auth";
-import { DemoPanel } from "@/components/demo/demo-panel";
+import { GoogleButton } from "@/components/auth/google-button";
+import { googleEnabled } from "@/lib/auth-providers";
 
 export const metadata: Metadata = { title: "Log in" };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { next, error } = await searchParams;
   const returning = typeof next === "string";
+  const google = await googleEnabled();
   return (
     <div className="space-y-6">
       <h1 className="font-serif text-display font-medium md:text-headline">Welcome <em className="italic">back</em></h1>
@@ -23,6 +25,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           Log in again. If this keeps happening, create a new account.
         </Alert>
       ) : null}
+      {error === "google" ? (
+        <Alert tone="severe" title="Google sign-in did not finish" role="alert">
+          Try again, or log in with your email and password.
+        </Alert>
+      ) : null}
+      {google ? <GoogleButton next={safeNext(next)} /> : null}
       <LoginForm next={safeNext(next)} />
       <p className="text-ink-2">
         New to CareTrail?{" "}
@@ -30,10 +38,6 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           Create an account
         </Link>
       </p>
-      <section aria-labelledby="demo-login-title" className="border-t border-rule pt-6">
-        <h2 id="demo-login-title" className="mb-3 text-lead font-bold">Or try a sample patient</h2>
-        <DemoPanel compact />
-      </section>
     </div>
   );
 }

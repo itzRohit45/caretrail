@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Pages anyone may open. Token pages (/s, /e) are checked by their own API calls.
 const PUBLIC_PATHS = ["/", "/login", "/signup"];
-const PUBLIC_PREFIXES = ["/s", "/e", "/demo"];
+const PUBLIC_PREFIXES = ["/s", "/e", "/auth"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.includes(pathname) || PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));

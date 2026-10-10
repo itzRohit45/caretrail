@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildBrandIndex, cleanBrand, matchBrand } from "../brands";
-import { decodeFrequency } from "../frequency";
+import { daysFromQuantity, decodeFrequency, dosesPerDay, readDosing } from "../frequency";
 import { normaliseValue, parseRange, splitBloodPressure, testCode, parseNumber } from "../labs";
 import { conditionCategory, preferredConditionName } from "../conditions";
 import { toIsoDate } from "../dates";
@@ -52,6 +52,49 @@ describe("frequency shorthand", () => {
     expect(decodeFrequency("HS")).toBe("At bedtime");
   });
   it("returns null for unknown text", () => expect(decodeFrequency("as directed")).toBeNull());
+  it("decodes spaced and packed digit patterns from handwritten prescriptions", () => {
+    expect(decodeFrequency("1 0 1")).toBe("Morning and night");
+    expect(decodeFrequency("0 0 1")).toBe("Night");
+    expect(decodeFrequency("001")).toBe("Night");
+    expect(decodeFrequency("o o 1")).toBe("Night");
+    expect(decodeFrequency("1-1-1")).toBe("Morning, afternoon and night");
+  });
+  it("does not read a strength as a pattern", () => {
+    expect(decodeFrequency("500 mg")).toBeNull();
+    expect(decodeFrequency("650")).toBeNull();
+    expect(decodeFrequency("200 mg")).toBeNull();
+  });
+});
+
+describe("dosing read from the written line when the fields are empty", () => {
+  it("takes pattern and quantity from the verbatim line, not the strength", () => {
+    expect(readDosing({ brand_name: "AZILIFT", source_text: "T. AZILIFT 500mg 001 = 5" })).toEqual({ frequency: "0-0-1", quantity: 5, duration_days: 5, daysFromQuantity: true });
+    expect(readDosing({ brand_name: "PANTOCID", source_text: "T. PANTOCID 40mg 101 = 20" })).toMatchObject({ frequency: "1-0-1", quantity: 20, duration_days: 10 });
+    expect(readDosing({ brand_name: "DOLO", source_text: "T. DOLO - 650mg 1-1-1 = 30" })).toMatchObject({ frequency: "1-1-1", duration_days: 10 });
+  });
+  it("keeps what the model filled in, and never turns a bottle into days", () => {
+    expect(readDosing({ brand_name: "Glycomet", frequency: "1-0-1", duration_days: 90, source_text: "Tab. Glycomet 500 mg 1-0-1 x 90 days" })).toMatchObject({ frequency: "1-0-1", duration_days: 90, daysFromQuantity: false });
+    expect(readDosing({ brand_name: "BROCHOREX COUGH SYRUP", source_text: "BROCHOREX COUGH SYRUP 10ml HS = (1) Bottle" })).toMatchObject({ frequency: "HS", duration_days: null });
+  });
+});
+
+describe("course length from quantity", () => {
+  it("counts doses a day", () => {
+    expect(dosesPerDay("1 0 1")).toBe(2);
+    expect(dosesPerDay("001")).toBe(1);
+    expect(dosesPerDay("1-1-1")).toBe(3);
+    expect(dosesPerDay("BD")).toBe(2);
+    expect(dosesPerDay("SOS")).toBeNull();
+  });
+  it("turns tablets into days only when it divides exactly", () => {
+    expect(daysFromQuantity(20, "1 0 1")).toBe(10);
+    expect(daysFromQuantity(5, "0 0 1")).toBe(5);
+    expect(daysFromQuantity(30, "1-1-1")).toBe(10);
+    expect(daysFromQuantity(15, "1-0-1")).toBeNull();
+    expect(daysFromQuantity(10, "SOS")).toBeNull();
+    expect(daysFromQuantity(undefined, "1-0-1")).toBeNull();
+    expect(daysFromQuantity(1, "HS", "BROCHOREX COUGH SYRUP 10ml HS = 1 bottle")).toBeNull();
+  });
 });
 
 describe("labs", () => {

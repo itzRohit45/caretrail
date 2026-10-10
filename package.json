@@ -13,7 +13,7 @@
     "gen-types": "node --env-file=.env.local scripts/gen-types.mjs",
     "predev": "node scripts/copy-pdf-worker.mjs",
     "prebuild": "node scripts/copy-pdf-worker.mjs",
-    "seed": "tsx --conditions=react-server --env-file=.env.local --tsconfig tsconfig.json scripts/seed-demo.mts"
+    "seed:test-account": "tsx --conditions=react-server --env-file=.env.local --tsconfig tsconfig.json scripts/seed-test-account.mts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

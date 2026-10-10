@@ -47,7 +47,7 @@ export default async function ProfilePage() {
         </SheetSection>
 
         <SheetSection id="export" title="Take your record anywhere" description="Download everything you have saved (allergies, conditions, medicines and results, each with its source) as a FHIR R4 file, the standard format hospital systems and health apps read.">
-          <a href="/api/export/fhir" download className={buttonClass("secondary")}>
+          <a href="/api/export/fhir" download className={buttonClass("secondary", undefined, "w-full whitespace-normal text-center sm:w-auto")}>
             <DownloadSimple aria-hidden className="size-5" /> Download my record (FHIR)
           </a>
         </SheetSection>

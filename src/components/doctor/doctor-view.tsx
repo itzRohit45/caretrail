@@ -24,12 +24,9 @@ type Phase =
   | { name: "ready"; brief: Loaded };
 type Opened = { id: string; quote: string | null; title: string } | null;
 
-const SHORT: Record<string, string> = { prescription: "Rx", lab_report: "Lab", discharge_summary: "Discharge", scan_report: "Scan", other: "Doc" };
+const SHORT: Record<string, string> = { prescription: "Rx", lab_report: "Lab", discharge_summary: "Discharge", scan_report: "Scan", consultation_note: "Notes", other: "Doc" };
 const day = (iso: string) => new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(`${iso}T00:00:00+05:30`));
 const dayOf = (iso: string) => new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(iso));
-// The sample doctor link (landing page) is pre-filled as Ravi's diabetologist, who last viewed on 20 Aug.
-const SAMPLE_DOCTOR = { name: "Dr. A. Suresh", reg: "TNMC 61234" };
-const isSample = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("sample") === "1";
 const cap = (s: string | null) => (s ? s.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
 
 function countdown(iso: string, now: number) {
@@ -113,8 +110,8 @@ function Panel({ title, count, children }: { title: string; count?: number; chil
 
 export function DoctorView() {
   const [phase, setPhase] = useState<Phase>({ name: "checking" });
-  const [name, setName] = useState(() => (isSample() ? SAMPLE_DOCTOR.name : ""));
-  const [regNo, setRegNo] = useState(() => (isSample() ? SAMPLE_DOCTOR.reg : ""));
+  const [name, setName] = useState("");
+  const [regNo, setRegNo] = useState("");
   const [tab, setTab] = useState<"since" | "brief">("since");
   const [otp, setOtp] = useState("");
   const [now, setNow] = useState(() => Date.now());
@@ -218,11 +215,6 @@ export function DoctorView() {
             <p id="reg-help" className="mb-2 text-dense text-ink-2">Add it to see what changed since you last viewed this patient.</p>
             <input id="reg" value={regNo} onChange={(e) => setRegNo(e.target.value)} autoCapitalize="characters" aria-describedby="reg-help" className={cn(inputClass, "font-mono")} />
           </div>
-          {isSample() ? (
-            <p className="rounded-control bg-primary-soft px-3 py-2 text-dense text-primary">
-              Sample link: filled in as Ravi&apos;s diabetologist, who last viewed this record on 20 Aug 2026. Change the name to see the record as a new doctor.
-            </p>
-          ) : null}
           {phase.requireOtp ? (
             <div>
               <label htmlFor="code" className="mb-1 block font-semibold">Code from the patient</label>
@@ -275,7 +267,7 @@ export function DoctorView() {
         </p>
       ) : null}
       {since && changes === 0 ? (
-        <p className="mx-auto mt-4 max-w-7xl px-4 text-ink-2">Nothing new is dated after your last view on <span className="font-semibold text-ink">{dayOf(since.at)}</span>.</p>
+        <p className="mx-auto mt-4 max-w-7xl px-4 text-ink-2">Nothing new since your last view on <span className="font-semibold text-ink">{dayOf(since.at)}</span>.</p>
       ) : null}
       {since && changes > 0 ? (
         <div className="mx-auto mt-4 flex max-w-7xl flex-wrap gap-2 px-4" aria-label="Brief views">
@@ -574,7 +566,7 @@ function SinceView({ since, allergies, onOpen }: { since: SinceLastVisit; allerg
   return (
     <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-3">
       <p className="text-ink-2 lg:col-span-3">
-        Dated after your last view on <span className="font-semibold text-ink">{dayOf(since.at)}</span>. Everything else is under Full brief.
+        Added or dated after your last view on <span className="font-semibold text-ink">{dayOf(since.at)}</span>. Everything else is under Full brief.
       </p>
       <div className="space-y-4">
         <Allergies allergies={allergies} />

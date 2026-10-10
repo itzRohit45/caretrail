@@ -50,7 +50,7 @@ try {
   await page.waitForURL("**/home");
   for (const [kind, file] of [
     ["Prescription", "demo-docs/ravi/06-rx-suresh-aug-2026.pdf"],
-    ["Lab report", "demo-docs/ravi/08-lab-hba1c-sep-2026.pdf"],
+    ["Lab report", "demo-docs/ravi/08-lab-hba1c-oct-2026.pdf"],
     ["Lab report", "demo-docs/ravi/04-lab-lipid-mar-2026.pdf"],
   ]) await addRecord(kind, file);
 

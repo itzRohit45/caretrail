@@ -4,9 +4,9 @@ import { Plus } from "@phosphor-icons/react/ssr";
 import { requirePatient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadMedicines } from "@/lib/safety/load";
-import { courseEnded } from "@/lib/safety/engine";
+
 import { decodeFrequency } from "@/lib/normalise/frequency";
-import { formatDate, todayIST } from "@/lib/format";
+import { daysBetween, formatDate, todayIST } from "@/lib/format";
 import { PageBody, PageHeader } from "@/components/ui/page";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Medicines" };
 
 export default async function MedicinesPage() {
   const { patient } = await requirePatient();
-  const { groups, stopped, warnings, unrecognised } = await loadMedicines(await createClient(), patient.id);
+  const { groups, finished, stopped, warnings, unrecognised } = await loadMedicines(await createClient(), patient.id);
   const today = todayIST();
 
   return (
@@ -32,7 +32,7 @@ export default async function MedicinesPage() {
         }
       />
       <PageBody>
-        {groups.length === 0 && stopped.length === 0 ? (
+        {groups.length === 0 && stopped.length === 0 && finished.length === 0 ? (
           <EmptyState
             title="No medicines yet"
             body="Add a prescription or discharge summary. Every medicine on it appears here, and CareTrail checks them against each other and your allergies."
@@ -52,13 +52,39 @@ export default async function MedicinesPage() {
               {groups.length ? (
                 <ul className="grid gap-4 md:grid-cols-2">
                   {groups.map((g) => (
-                    <MedicineCard key={g.key} group={g} endedOn={courseEnded(g.current, today)} />
+                    <MedicineCard
+                      key={g.key}
+                      group={g}
+                      prescribedLongAgo={!g.current.duration_days && g.current.start_date && daysBetween(g.current.start_date, today) > 90 ? g.current.start_date : null}
+                    />
                   ))}
                 </ul>
               ) : (
                 <p className="rounded-card border border-rule bg-sheet p-4 text-ink-2">No medicines are marked as current.</p>
               )}
             </section>
+            {finished.length ? (
+              <details className="group rounded-card border border-rule bg-sheet p-4 sm:p-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold">
+                  Finished courses ({finished.length})
+                  <span className="text-dense font-semibold text-primary group-open:hidden">Show</span>
+                </summary>
+                <p className="mt-2 text-dense text-ink-2">The number of days written on the prescription has passed, so these are no longer counted as current or checked for clashes.</p>
+                <ul className="mt-2 divide-y divide-rule">
+                  {finished.map((m) => (
+                    <li key={m.id} className="flex flex-wrap items-baseline justify-between gap-2 py-3">
+                      <span>
+                        <span className="font-semibold">{m.brand_name}</span>
+                        <span className="text-ink-2"> {[m.dose, decodeFrequency(m.frequency) ?? m.frequency, m.duration_days ? `${m.duration_days} days` : null].filter(Boolean).join(", ")}</span>
+                      </span>
+                      <span className="text-dense text-ink-2">
+                        {m.prescriber ? `${m.prescriber}, ` : ""}course ended {formatDate(m.ended_on)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
             {stopped.length ? (
               <details className="group rounded-card border border-rule bg-sheet p-4 sm:p-5">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold">

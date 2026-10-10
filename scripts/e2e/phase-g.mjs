@@ -53,7 +53,8 @@ try {
   check("tier 1 card opens without login", await seen(er.getByRole("heading", { name: "Arun Prakash" })));
   check("blood group shown large", await seen(er.getByText("O+", { exact: true })));
   check("allergy shown in the severe band", await seen(er.getByText("Sulfa drugs")));
-  check("current medicines listed", await seen(er.getByText("Omez", { exact: false })));
+  check("current medicines listed (Dolo, as needed)", await seen(er.getByText("Dolo", { exact: false })));
+  check("finished 14-day course left off the card (Omez)", (await er.getByText("Omez", { exact: false }).count()) === 0);
   const call = er.getByRole("link", { name: /Call Karthik Prakash/ });
   check("tap-to-call uses a tel: link", (await call.getAttribute("href")) === "tel:+919841022764");
   const box = await call.boundingBox();

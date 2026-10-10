@@ -20,6 +20,7 @@ import { DocumentPreview } from "@/components/records/document-preview";
 import { ReviewForm } from "@/components/records/review-form";
 import { ProcessingWatcher } from "@/components/records/processing-watcher";
 import { SavedFacts } from "@/components/records/saved-facts";
+import { dosesPerDay, readDosing } from "@/lib/normalise/frequency";
 
 export const metadata: Metadata = { title: "Record" };
 
@@ -58,16 +59,20 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
       uploadDate: formatDate(doc.created_at),
       facility: x?.facility?.value ?? "",
       doctor_name: x?.doctor_name?.value ?? "",
-      medications: (x?.medications ?? []).map((m, i) => ({
-        brand_name: m.brand_name,
-        dose: m.strength ?? "",
-        frequency: m.frequency ?? "",
-        duration_days: m.duration_days ?? null,
-        source_text: m.source_text,
-        confidence: m.confidence,
-        reasons: plan?.medications[i] ?? [],
-        generics: matchBrand(m.brand_name, ref.index).generics,
-      })),
+      medications: (x?.medications ?? []).map((m, i) => {
+        const d = readDosing(m);
+        return {
+          brand_name: m.brand_name,
+          dose: m.strength ?? "",
+          frequency: d.frequency ?? "",
+          duration_days: d.duration_days,
+          days_note: d.daysFromQuantity ? `Worked out from ${d.quantity} written on the paper, ${dosesPerDay(d.frequency)} a day` : undefined,
+          source_text: m.source_text,
+          confidence: m.confidence,
+          reasons: plan?.medications[i] ?? [],
+          generics: matchBrand(m.brand_name, ref.index).generics,
+        };
+      }),
       labs: (x?.lab_results ?? []).map((l, i) => ({
         test_name: l.test_name,
         value: l.value,

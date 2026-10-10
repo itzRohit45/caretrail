@@ -5,7 +5,7 @@ const PANEL: Record<string, string> = {
   LDL: "LIPID", HDL: "LIPID", TC: "LIPID", TG: "LIPID",
   CREAT: "KFT", UREA: "KFT", EGFR: "KFT",
   TSH: "TSH", FT4: "TSH",
-  HB: "HB", TROPONIN: "TROPONIN",
+  HB: "CBC", TROPONIN: "TROPONIN",
 };
 
 export type ValidityRow = { test_code: string; test_name: string; validity_days: number; typical_price_inr: number };

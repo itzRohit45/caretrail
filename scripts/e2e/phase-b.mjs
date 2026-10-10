@@ -46,17 +46,17 @@ try {
   check("wrong file type rejected before upload", await seen(page.getByText(/is not a PDF, JPG or PNG/)));
   await page.screenshot({ path: `${shots}/upload-desktop.png`, fullPage: true, caret: "initial" });
 
-  await uploadFile("Lab report", "demo-docs/ravi/08-lab-hba1c-sep-2026.pdf");
+  await uploadFile("Lab report", "demo-docs/ravi/08-lab-hba1c-oct-2026.pdf");
   await page.waitForURL(/\/records\/[0-9a-f-]{36}$/, { timeout: 60000 });
   check("confident lab report saved without review", await seen(page.getByRole("heading", { name: "Test results" }), 60000));
   check("HbA1c value saved from the real extraction", await seen(page.getByText("Glycosylated Haemoglobin (HbA1c)")));
   await page.screenshot({ path: `${shots}/record-saved-desktop.png`, fullPage: true, caret: "initial" });
 
-  await uploadFile("Lab report", "demo-docs/ravi/08-lab-hba1c-sep-2026.pdf");
+  await uploadFile("Lab report", "demo-docs/ravi/08-lab-hba1c-oct-2026.pdf");
   check("same file blocked as duplicate with date", await seen(page.getByText(/Already uploaded on/)));
   check("duplicate offers a link to the existing record", await seen(page.getByRole("link", { name: "Open it" })));
 
-  await uploadFile("Prescription", "demo-docs/ravi/07-rx-ramesh-sep-2026-photo.jpg");
+  await uploadFile("Prescription", "demo-docs/ravi/07-rx-ramesh-oct-2026-photo.jpg");
   await page.waitForURL(/\/records\/[0-9a-f-]{36}$/, { timeout: 60000 });
   check("prescription goes to the verify screen", await seen(page.getByRole("heading", { name: "Check what we read" }), 60000));
   check("doses are flagged for checking", await seen(page.getByText("Check the dose and how often against your paper.")));

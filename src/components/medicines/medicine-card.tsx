@@ -13,7 +13,8 @@ import { cn } from "@/lib/cn";
 
 const titleCase = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
 
-export function MedicineCard({ group, endedOn }: { group: MedGroup; endedOn: string | null }) {
+/** prescribedLongAgo: start date of a medicine with no written course length that is months old. */
+export function MedicineCard({ group, prescribedLongAgo }: { group: MedGroup; prescribedLongAgo: string | null }) {
   const router = useRouter();
   const m = group.current;
   const [mode, setMode] = useState<"view" | "confirm-stop" | "edit">("view");
@@ -70,11 +71,11 @@ export function MedicineCard({ group, endedOn }: { group: MedGroup; endedOn: str
         </p>
       ) : null}
 
-      {endedOn && mode === "view" ? (
+      {prescribedLongAgo && mode === "view" ? (
         <p className="mt-3 flex items-start gap-2 rounded-control bg-sheet-sunk px-3 py-2 text-dense">
           <CalendarX aria-hidden className="mt-0.5 size-5 shrink-0 text-ink-2" />
           <span>
-            Course ended {formatDate(endedOn)}. Finished it? Mark it stopped.
+            Prescribed {formatDate(prescribedLongAgo)} with no course length. Not taking it any more? Mark it stopped.
           </span>
         </p>
       ) : null}

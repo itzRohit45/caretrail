@@ -2,13 +2,14 @@ import { z } from "zod";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png"] as const;
-export const DOC_TYPES = ["prescription", "lab_report", "discharge_summary", "scan_report", "other"] as const;
+export const DOC_TYPES = ["prescription", "lab_report", "consultation_note", "discharge_summary", "scan_report", "other"] as const;
 
 export const DOC_TYPE_LABELS: Record<(typeof DOC_TYPES)[number], string> = {
   prescription: "Prescription",
   lab_report: "Lab report",
   discharge_summary: "Discharge summary",
   scan_report: "Scan report",
+  consultation_note: "Consultation notes",
   other: "Other",
 };
 

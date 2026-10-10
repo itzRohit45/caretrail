@@ -50,17 +50,14 @@ export async function logAccess(ctx: ShareContext, entry: { action: string; view
 
 /**
  * When this doctor (same name and registration number) last viewed this patient, if ever.
- * The shared sample patient compares with its seeded visit only; otherwise every visitor using the
- * sample doctor link would become the "last visit" for the next one.
  */
-export async function previousVisit(patient: Pick<Row<"patients">, "id" | "is_demo_template">, name: string, regNo: string) {
-  let query = adminClient()
+export async function previousVisit(patient: Pick<Row<"patients">, "id">, name: string, regNo: string) {
+  const query = adminClient()
     .from("access_logs")
     .select("viewer_name, viewer_reg_no, created_at")
     .eq("patient_id", patient.id)
     .in("action", ["opened", "break_glass"])
     .not("viewer_reg_no", "is", null);
-  if (patient.is_demo_template) query = query.is("share_link_id", null);
   const { data } = await query.order("created_at", { ascending: false }).limit(500);
   return data?.find((l) => l.viewer_name && l.viewer_reg_no && sameDoctorName(l.viewer_name, name) && sameRegNo(l.viewer_reg_no, regNo))?.created_at ?? null;
 }

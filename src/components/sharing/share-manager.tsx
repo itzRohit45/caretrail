@@ -66,7 +66,8 @@ export function ShareManager() {
   const [months, setMonths] = useState<3 | 6 | 12>(6);
   const [expiry, setExpiry] = useState<"1h" | "24h" | "7d">("24h");
   const [otp, setOtp] = useState(false);
-  const [writeBack, setWriteBack] = useState(false);
+  // On by default: a doctor's note is the most common thing to add. Prescriptions still wait for the patient.
+  const [writeBack, setWriteBack] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
@@ -208,8 +209,8 @@ export function ShareManager() {
           <label className="flex cursor-pointer items-start gap-3 rounded-control border border-rule p-4">
             <input type="checkbox" checked={writeBack} onChange={(e) => setWriteBack(e.target.checked)} className="mt-1 size-5 accent-primary" />
             <span>
-              <span className="block font-semibold">Let the doctor add to my record</span>
-              <span className="block text-dense text-ink-2">They can leave a note or upload a new prescription. You check every prescription before it joins your record.</span>
+              <span className="block font-semibold">Let the doctor add notes and prescriptions</span>
+              <span className="block text-dense text-ink-2">Their notes appear on your Home and Sharing pages. You check every prescription they upload before it joins your record.</span>
             </span>
           </label>
           {error ? <p role="alert" className="font-semibold text-severe">{error}</p> : null}

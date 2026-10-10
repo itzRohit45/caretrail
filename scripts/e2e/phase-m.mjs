@@ -31,7 +31,7 @@ try {
   // 1. Two photos of one prescription, plus a third page from the camera button, then one removed.
   await page.goto(`${BASE}/upload`);
   await page.getByRole("radio", { name: "Prescription" }).click();
-  await page.locator("input[type=file]:not([capture])").setInputFiles(["demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg", "demo-docs/ravi/07-rx-ramesh-sep-2026-photo.jpg"]);
+  await page.locator("input[type=file]:not([capture])").setInputFiles(["demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg", "demo-docs/ravi/07-rx-ramesh-oct-2026-photo.jpg"]);
   check("two photos listed as one record", await seen(page.getByText("2 pages, uploaded as one record in this order")));
   await page.locator("input[type=file][capture]").setInputFiles("demo-docs/lakshmi/04-rx-karthik-apr-2026-photo.jpg");
   check("camera adds a third page", await seen(page.getByText("3 pages, uploaded as one record in this order")));

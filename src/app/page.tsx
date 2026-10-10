@@ -4,8 +4,6 @@ import { FileMagnifyingGlass, Pill, HandPalm } from "@phosphor-icons/react/ssr";
 import { Wordmark } from "@/components/wordmark";
 import { buttonClass } from "@/components/ui/button";
 import { SampleBrief, SampleLabCard, SampleViewingPill, SampleWarningCard } from "@/components/marketing/samples";
-import { DemoPanel } from "@/components/demo/demo-panel";
-import { Alert } from "@/components/ui/alert";
 import portrait from "../../public/images/patient-portrait.jpg";
 
 const features = [
@@ -26,8 +24,7 @@ const features = [
   },
 ];
 
-export default async function Landing({ searchParams }: PageProps<"/">) {
-  const { demo } = await searchParams;
+export default function Landing() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="mx-auto flex h-18 w-full max-w-6xl items-center justify-between px-5 sm:px-6">
@@ -54,18 +51,18 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
               CareTrail reads your prescriptions and lab reports, catches medicine mix-ups across doctors, and shares only what you choose.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="#demo" className={buttonClass("primary")}>
-                Try the demo
-              </a>
-              <Link href="/signup" className={buttonClass("secondary")}>
+              <Link href="/signup" className={buttonClass("primary")}>
                 Create free account
+              </Link>
+              <Link href="/login" className={buttonClass("secondary")}>
+                Log in
               </Link>
             </div>
           </div>
 
           <figure className="relative mx-auto w-full max-w-lg lg:mr-0">
             <div className="relative aspect-[4/5] overflow-hidden rounded-media bg-sheet-sunk">
-              <Image src={portrait} alt="An older man smiling at the camera" fill priority placeholder="blur" sizes="(min-width: 1024px) 32rem, 92vw" className="object-cover object-[50%_30%]" />
+              <Image src={portrait} alt="A young woman smiling at the camera" fill priority placeholder="blur" sizes="(min-width: 1024px) 32rem, 92vw" className="object-cover object-[47%_35%]" />
               <SampleViewingPill className="absolute top-4 left-4 shadow-float" />
             </div>
             <div className="relative -mt-28 space-y-3 px-4 sm:px-8 lg:absolute lg:inset-0 lg:mt-0 lg:px-0">
@@ -73,26 +70,9 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
               <SampleWarningCard className="shadow-float lg:absolute lg:-right-8 lg:bottom-8 lg:w-80" />
             </div>
             <figcaption className="mt-4 text-meta text-ink-3 lg:mt-5">
-              Sample record with simulated names. Photo by Wilfred Sequeira on Unsplash.
+              Sample record with simulated names. Photo supplied by the CareTrail team.
             </figcaption>
           </figure>
-        </section>
-
-        <section id="demo" aria-labelledby="demo-title" className="scroll-mt-6 border-t border-rule">
-          <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 lg:py-20">
-            <h2 id="demo-title" className="font-serif text-display font-medium md:text-headline">
-              Try it with a <em className="italic">sample patient</em>
-            </h2>
-            <p className="mt-3 max-w-[56ch] text-lead text-ink-2">Every record was read from simulated prescriptions and lab reports by the same pipeline you would use. No sign-up needed.</p>
-            {demo ? (
-              <Alert tone="info" title={demo === "busy" ? "Many demos started from your network" : "The demo could not start"} className="mt-6 max-w-xl" role="status">
-                {demo === "busy" ? "Please wait a few minutes and try again, or create a free account." : "Please try again in a moment."}
-              </Alert>
-            ) : null}
-            <div className="mt-8">
-              <DemoPanel />
-            </div>
-          </div>
         </section>
 
         <section aria-labelledby="how-title" className="border-t border-rule bg-sheet">
@@ -126,7 +106,7 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 text-dense text-ink-2 sm:flex-row sm:justify-between sm:px-6">
           <p>CareTrail is an information tool, not medical advice.</p>
-          <p>Demo data is simulated. No real patient data is used.</p>
+          <p>Records shown on this page are simulated examples.</p>
         </div>
       </footer>
     </div>

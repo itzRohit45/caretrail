@@ -48,9 +48,10 @@ try {
 
   for (const [kind, file] of [
     ["Prescription", "demo-docs/ravi/06-rx-suresh-aug-2026.pdf"],
-    ["Prescription", "demo-docs/ravi/07-rx-ramesh-sep-2026-photo.jpg"],
-    ["Prescription", "demo-docs/ravi/10-rx-lakshmanan-sep-2026.pdf"],
-    ["Lab report", "demo-docs/ravi/08-lab-hba1c-sep-2026.pdf"],
+    ["Prescription", "demo-docs/ravi/07-rx-ramesh-oct-2026-photo.jpg"],
+    ["Prescription", "demo-docs/ravi/10-rx-lakshmanan-oct-2026.pdf"],
+    ["Lab report", "demo-docs/ravi/08-lab-hba1c-oct-2026.pdf"],
+    ["Discharge summary", "demo-docs/ravi/03-discharge-kaveri-mar-2026.pdf"],
   ]) await addRecord(kind, file);
 
   await page.goto(`${BASE}/medicines`);
@@ -61,7 +62,7 @@ try {
   check("duplicate warning names both doctors", /Suresh/.test(dup ?? "") && /Ramesh/.test(dup ?? ""));
   check("moderate interaction listed", await seen(page.getByText(/moderate interaction/i)));
   check("fixed safety note shown", await seen(page.getByText("Discuss with your doctor; do not stop medicines on your own.")));
-  check("ended course prompts to mark stopped", await seen(page.getByText(/Course ended .* Mark it stopped/).first()));
+  check("courses whose days have passed move to Finished courses (Pantocid, 14 days from March)", await seen(page.getByText(/Finished courses \(\d+\)/)) && (await page.getByRole("button", { name: /^Stop Pantocid/ }).count()) === 0);
   await page.screenshot({ path: `${shots}/medicines-desktop.png`, fullPage: true, caret: "initial" });
 
   const api = await page.evaluate(async () => (await fetch("/api/safety")).json());

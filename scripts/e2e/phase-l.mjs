@@ -14,11 +14,11 @@ const check = (name, cond) => {
   if (!cond) process.exitCode = 1;
 };
 
-const { data: template } = await admin.from("patients").select("id").eq("is_demo_template", true).eq("name", "Ravi Kumar").single();
-const { data: created } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { demo: true, name: "Ravi Kumar" } });
+const { data: created } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name: "Ravi Kumar" } });
 const userId = created.user.id;
-await admin.rpc("clone_demo_patient", { p_template: template.id, p_owner: userId });
 const { data: patient } = await admin.from("patients").select("id").eq("owner_user_id", userId).single();
+await admin.from("patients").update({ sex: "male", blood_group: "B+" }).eq("id", patient.id);
+await admin.from("allergies").insert({ patient_id: patient.id, substance: "Penicillin", severity: "severe", reaction: "Rash" });
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await browser.newPage({ acceptDownloads: true });
@@ -31,6 +31,22 @@ try {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL("**/home");
+  // A real prescription (checked and saved) and a lab report, then one medicine marked stopped.
+  for (const [kind, path] of [["Prescription", "demo-docs/ravi/06-rx-suresh-aug-2026.pdf"], ["Lab report", "demo-docs/ravi/08-lab-hba1c-oct-2026.pdf"]]) {
+    await page.goto(`${BASE}/upload`);
+    await page.getByRole("radio", { name: kind }).click();
+    await page.locator("input[type=file]:not([capture])").setInputFiles(path);
+    await page.getByRole("button", { name: "Upload record" }).click();
+    await page.waitForURL(/\/records\/[0-9a-f-]{36}$/, { timeout: 90000 });
+    const review = page.getByRole("button", { name: "Save to my record" });
+    const saved = page.getByRole("link", { name: "Add another" });
+    await Promise.race([review.waitFor({ timeout: 90000 }), saved.waitFor({ timeout: 90000 })]);
+    if (await review.isVisible()) {
+      await review.click();
+      await saved.waitFor({ timeout: 30000 });
+    }
+  }
+  await admin.from("medications").update({ active: false, stopped_on: "2026-09-30" }).eq("patient_id", patient.id).ilike("brand_name", "%telma%");
   await page.goto(`${BASE}/profile`);
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Download my record (FHIR)" }).click()]);
   check(`file named by date (${download.suggestedFilename()})`, /^caretrail-record-\d{4}-\d{2}-\d{2}\.json$/.test(download.suggestedFilename()));
@@ -45,7 +61,7 @@ try {
   check(`every result exported (+ blood group) (${of("Observation").length}/${labs + 1})`, of("Observation").length === labs + 1);
   check(`every condition exported (${of("Condition").length}/${conds})`, of("Condition").length === conds);
   check("allergy with high criticality", of("AllergyIntolerance").some((a) => a.code.text === "Penicillin" && a.criticality === "high"));
-  check("stopped medicine kept as stopped", of("MedicationStatement").some((m) => /Amlong/.test(m.medicationCodeableConcept.text) && m.status === "stopped"));
+  check("stopped medicine kept as stopped", of("MedicationStatement").some((m) => /Telma/.test(m.medicationCodeableConcept.text) && m.status === "stopped"));
   check("HbA1c coded with LOINC 4548-4", of("Observation").some((o) => o.code.coding?.[0]?.code === "4548-4" && o.valueQuantity?.value === 7.4));
   check("every fact points at this patient only", bundle.entry.every((e) => e.resource.resourceType === "Patient" ? e.resource.id === patient.id : (e.resource.subject ?? e.resource.patient).reference === `urn:uuid:${patient.id}`));
   check("facts carry their source", of("MedicationStatement").every((m) => /^Source: /.test(m.note?.[0]?.text ?? "")));
@@ -53,6 +69,8 @@ try {
   check(`unexpected error: ${err.message.split("\n")[0]}`, false);
 } finally {
   await browser.close();
+  const { data: files } = await admin.storage.from("documents").list(patient.id);
+  if (files?.length) await admin.storage.from("documents").remove(files.map((f) => `${patient.id}/${f.name}`));
   await admin.auth.admin.deleteUser(userId);
   console.log(results.join("\n"));
 }

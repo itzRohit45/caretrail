@@ -46,6 +46,24 @@ export default async function HomePage() {
     .filter((t) => t.key !== "BP" && t.points.length > 0)
     .map((t) => ({ trend: t, point: t.points.at(-1) as TrendPoint }))
     .slice(0, 3);
+  // Fill Latest results from the newest lab report for tests without a trend chart (blood count,
+  // liver tests...), out-of-range values first, each with the range printed on the report.
+  const { data: recentLabs } = latest.length < 3
+    ? await supabase
+        .from("lab_results")
+        .select("id, test_name, test_code, value, value_text, unit, ref_low, ref_high, test_date, source_document_id")
+        .eq("patient_id", patient.id)
+        .order("test_date", { ascending: false })
+        .limit(60)
+    : { data: [] };
+  const shownCodes = new Set<string>(latest.map((l) => l.trend.key.toUpperCase())); // "HbA1c" -> "HBA1C"
+  const newestDate = recentLabs?.find((l) => !["BP_SYS", "BP_DIA"].includes(l.test_code ?? ""))?.test_date;
+  const outside = (l: { value: number | null; ref_low: number | null; ref_high: number | null }) =>
+    l.value !== null && ((l.ref_low !== null && l.value < l.ref_low) || (l.ref_high !== null && l.value > l.ref_high));
+  const extraLabs = (recentLabs ?? [])
+    .filter((l) => l.test_date === newestDate && !["BP_SYS", "BP_DIA"].includes(l.test_code ?? "") && !shownCodes.has(l.test_code ?? ""))
+    .sort((a, b) => Number(outside(b)) - Number(outside(a)))
+    .slice(0, 3 - latest.length);
   const { data: emergencyEvents } = await supabase
     .from("access_logs")
     .select("action, viewer_name, viewer_hospital, created_at")
@@ -125,7 +143,7 @@ export default async function HomePage() {
           </section>
         ) : null}
 
-        {meds.groups.length || validTests.length ? (
+        {meds.groups.length || saver.tests.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
             <Link href="/medicines" className="rounded-card border border-rule bg-sheet p-5 transition-colors duration-150 hover:border-rule-strong">
               <p className="flex items-center gap-2 font-bold"><Pill aria-hidden weight="duotone" className="size-5 text-primary" /> Taking now</p>
@@ -155,6 +173,18 @@ export default async function HomePage() {
                     ))}
                   </ul>
                   <p className="mt-2 text-meta text-ink-3">Estimate from typical Chennai lab prices.</p>
+                </>
+              ) : saver.tests.length ? (
+                <>
+                  <p className="mt-2 text-ink-2">None are still valid. These are due again; your doctor decides whether to repeat them.</p>
+                  <ul className="mt-3 space-y-1 text-dense">
+                    {saver.tests.slice(0, 3).map((t) => (
+                      <li key={t.code}>
+                        <Link href={`/records/${t.documentId}`} className="font-semibold text-primary hover:underline">{t.name}</Link>
+                        <span className="text-ink-2">, last done {formatDate(t.lastDate)}, due again since {formatDate(t.nextDue)}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </>
               ) : (
                 <p className="mt-2 text-ink-2">None right now. Recent lab reports appear here with the date they are next due.</p>
@@ -191,7 +221,7 @@ export default async function HomePage() {
           </section>
         ) : null}
 
-        {latest.length ? (
+        {latest.length || extraLabs.length ? (
           <section aria-labelledby="latest-title">
             <div className="mb-3 flex items-baseline justify-between gap-3">
               <h2 id="latest-title" className="text-title font-bold">Latest results</h2>
@@ -211,6 +241,20 @@ export default async function HomePage() {
                       {point.value} <span className="font-sans text-body text-ink-2">{trend.unit}</span>
                     </p>
                     {trend.range ? <RangeLine value={point.value} low={trend.range.low} high={trend.range.high} unit={trend.unit} className="mt-2" /> : null}
+                  </Link>
+                </li>
+              ))}
+              {extraLabs.map((l) => (
+                <li key={l.id}>
+                  <Link href={`/records/${l.source_document_id}`} className="block rounded-card border border-rule bg-sheet p-4 transition-colors duration-150 hover:border-rule-strong">
+                    <p className="flex items-baseline justify-between gap-2">
+                      <span className="font-bold">{l.test_name}</span>
+                      <span className="shrink-0 text-meta text-ink-2">{formatDate(l.test_date)}</span>
+                    </p>
+                    <p className="mt-1 font-serif text-display font-medium tabular-nums">
+                      {l.value ?? l.value_text} <span className="font-sans text-body text-ink-2">{l.unit}</span>
+                    </p>
+                    {l.value !== null && (l.ref_low !== null || l.ref_high !== null) ? <RangeLine value={l.value} low={l.ref_low} high={l.ref_high} unit={l.unit ?? undefined} className="mt-2" /> : null}
                   </Link>
                 </li>
               ))}

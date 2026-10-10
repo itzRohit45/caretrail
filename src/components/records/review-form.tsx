@@ -240,7 +240,8 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
                   </div>
                   <div>
                     <label htmlFor={`days-${m.key}`} className={label}>Days</label>
-                    <input id={`days-${m.key}`} type="number" inputMode="numeric" min={1} max={3650} value={m.duration_days ?? ""} onChange={(e) => updMed(m.key, { duration_days: e.target.value ? Number(e.target.value) : null })} className={smallInput} />
+                    <input id={`days-${m.key}`} type="number" inputMode="numeric" min={1} max={3650} value={m.duration_days ?? ""} onChange={(e) => updMed(m.key, { duration_days: e.target.value ? Number(e.target.value) : null, days_note: undefined })} aria-describedby={m.days_note ? `days-${m.key}-note` : undefined} className={smallInput} />
+                    {m.days_note ? <p id={`days-${m.key}-note`} className="mt-1 text-meta text-ink-2">{m.days_note}</p> : null}
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <label htmlFor={`freq-${m.key}`} className={label}>How often</label>

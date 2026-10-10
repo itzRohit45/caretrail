@@ -152,3 +152,8 @@ export function courseEnded(m: Pick<SafetyMed, "start_date" | "duration_days">, 
   const iso = end.toISOString().slice(0, 10);
   return iso < today ? iso : null;
 }
+
+/** Taking it now: not marked stopped, and the written course (start date + days) has not ended. */
+export function isCurrent(m: Pick<SafetyMed, "start_date" | "duration_days"> & { active: boolean }, today: string) {
+  return m.active && !courseEnded(m, today);
+}
