@@ -18,3 +18,10 @@ export async function allowRequest(request: Request | Headers, bucket: string, l
   // token, expiry, revocation and scope checks never fail open.
   return error ? true : Boolean(data);
 }
+
+/** The site's own origin as the visitor reached it (works on any Vercel domain without configuration). */
+export function originOf(request: Request) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") ?? new URL(request.url).protocol.replace(":", "");
+  return host ? `${proto}://${host}` : new URL(request.url).origin;
+}

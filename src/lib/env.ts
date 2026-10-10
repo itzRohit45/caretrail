@@ -15,7 +15,6 @@ const serverEnvSchema = z.object({
   ALERT_FROM_EMAIL: optional,
   IP_HASH_SALT: z.string().min(32),
   DEMO_EMERGENCY_TOKEN: optional,
-  NEXT_PUBLIC_APP_URL: z.url(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

@@ -1,7 +1,7 @@
 import { patientForRequest } from "@/lib/auth";
 import { createShareSchema, EXPIRY_OPTIONS } from "@/lib/schemas/shares";
 import { hashToken, newOtp, newToken } from "@/lib/sharing/tokens";
-import { serverEnv } from "@/lib/env";
+import { originOf } from "@/lib/sharing/request";
 import { fail, invalid, ok, unauthorized } from "@/lib/api/respond";
 
 const LIVE_MS = 15_000;
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     .single();
   if (error) return fail(500, "The link could not be created. Please try again.");
   // The token lives in the URL fragment, which browsers never send to servers, so it stays out of request logs.
-  return ok({ id: data.id, url: `${serverEnv().NEXT_PUBLIC_APP_URL}/s#${token}`, otp_code: otp, expires_at: data.expires_at }, 201);
+  return ok({ id: data.id, url: `${originOf(request)}/s#${token}`, otp_code: otp, expires_at: data.expires_at }, 201);
 }
 
 /** Links with status, view counts and who is viewing right now. */
