@@ -28,11 +28,11 @@ const svhi = { hospital: "Sri Venkateswara Heart Institute", address: "7, GST Ro
 
 export const documents = [
   // ------- Overlap test: the same medicines under other brands, from two doctors -------
-  { patient: "overlap-test", file: "rx-1-sunrise-clinic-oct-2026", kind: "rx", as: "pdf", ...meena, who: tester, date: "06/10/2026", vitals: "BP: 142/90 mmHg   Wt: 81 kg",
+  { patient: "overlap-test", file: "p1", kind: "rx", as: "pdf", ...meena, who: tester, date: "06/10/2026", vitals: "BP: 142/90 mmHg   Wt: 81 kg",
     dx: "T2DM. HTN. Old MI, on antiplatelet.",
     meds: [["Tab. Glycomet 500 mg", "1-0-1", "x 30 days", "After food"], ["Tab. Telma 40 mg", "1-0-0", "x 30 days", ""], ["Tab. Atorva 10 mg", "0-0-1", "x 30 days", "After food"], ["Tab. Clopilet 75 mg", "0-1-0", "x 30 days", "After lunch"]],
     advice: "Check fasting sugar after 2 weeks." },
-  { patient: "overlap-test", file: "rx-2-lotus-centre-oct-2026-photo", kind: "rx", as: "photo", hand: true, ...arvind, who: tester, date: "09/10/2026", vitals: "BP 146/92",
+  { patient: "overlap-test", file: "p2", kind: "rx", as: "photo", hand: true, ...arvind, who: tester, date: "09/10/2026", vitals: "BP 146/92",
     dx: "Known DM, HTN. Dyslipidaemia. Acidity.",
     meds: [["Tab Gluconorm 500", "1-0-1", "x 30 days", "after food"], ["Tab Telmikind 40", "1-0-0", "x 30 days", ""], ["Tab Storvas 20", "0-0-1", "x 30 days", ""], ["Cap Omez 20", "1-0-0", "x 30 days", "before breakfast"]],
     advice: "Review 1 month with lipid profile." },
@@ -134,7 +134,7 @@ export const documents = [
     dx: "CAD s/p PCI to LAD. HTN. Dyslipidaemia.",
     meds: [["Tab. Ecosprin 75 mg", "0-1-0", "x 90 days", "After lunch"], ["Tab. Clopilet 75 mg", "0-1-0", "x 90 days", "After lunch"], ["Tab. Atorva 40 mg", "0-0-1", "x 90 days", ""], ["Tab. Metolar 25 mg", "1-0-1", "x 90 days", ""], ["Tab. Ramistar 2.5 mg", "1-0-0", "x 90 days", ""]],
     advice: "Cardiac rehab walking programme. Lipid profile after 6 weeks." },
-  { patient: "arun", file: "05-lab-lipid-jul-2026", kind: "lab", as: "pdf", ...anand, who: arun, refBy: "Dr. Vikram Srinivasan", date: "15/07/2026", labNo: "AL-0715-7731",
+  { patient: "arun", file: "lab_report", kind: "lab", as: "pdf", ...anand, who: arun, refBy: "Dr. Vikram Srinivasan", date: "15/07/2026", labNo: "AL-0715-7731",
     sections: [{ title: "Lipid Profile", rows: [["Total Cholesterol", "148", "mg/dL", "< 200"], ["LDL Cholesterol (Direct)", "82", "mg/dL", "< 70"], ["HDL Cholesterol", "41", "mg/dL", "> 40"], ["Triglycerides", "128", "mg/dL", "< 150"]] }] },
   { patient: "arun", file: "06-lab-kidney-jul-2026", kind: "lab", as: "pdf", ...anand, who: arun, refBy: "Dr. Vikram Srinivasan", date: "15/07/2026", labNo: "AL-0715-7732",
     sections: [{ title: "Renal Function Test", rows: [["Serum Creatinine", "1.2", "mg/dL", "0.7 - 1.3"], ["Serum Potassium", "4.6", "mmol/L", "3.5 - 5.1"]] }] },

@@ -20,7 +20,7 @@ try {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL("**/home");
-  for (const f of ["demo-docs/overlap-test/rx-1-sunrise-clinic-oct-2026.pdf", "demo-docs/overlap-test/rx-2-lotus-centre-oct-2026-photo.jpg"]) {
+  for (const f of ["demo-docs/overlap-test/p1.pdf", "demo-docs/overlap-test/p2.jpg"]) {
     await page.goto(`${BASE}/upload`);
     await page.getByRole("radio", { name: "Prescription" }).click();
     await page.locator("input[type=file]:not([capture])").setInputFiles(f);

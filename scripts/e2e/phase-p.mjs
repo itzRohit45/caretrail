@@ -48,8 +48,8 @@ try {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL("**/home");
-  await upload("demo-docs/overlap-test/rx-1-sunrise-clinic-oct-2026.pdf", true);
-  await upload("demo-docs/overlap-test/rx-2-lotus-centre-oct-2026-photo.jpg", true);
+  await upload("demo-docs/overlap-test/p1.pdf", true);
+  await upload("demo-docs/overlap-test/p2.jpg", true);
   await upload("demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg", false); // left waiting for the check
 
   await page.goto(`${BASE}/home`);
