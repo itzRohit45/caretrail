@@ -167,23 +167,23 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 - **Privacy policy** at [/privacy](https://caretrail-tan.vercel.app/privacy).
 - Works on phones first (checked at 360 and 390 px), in light and dark mode.
 
-### PRD coverage
+### Every feature is tested
 
-| PRD | Feature | Browser test |
-|---|---|---|
-| FR-01 | Sign up and log in (email or Google), profile, allergies, emergency contact | `phase-a` |
-| FR-02, FR-03, FR-04 | Upload (photos, PDFs, several pages, duplicate block), AI extraction with confidence and source text, check screen beside the original, normalisation (brands to generics, units, dosing shorthand, days from quantity) | `phase-b`, `phase-m`, `phase-n` |
-| FR-05 | Timeline with filters, lab trends with normal ranges | `phase-c` |
-| FR-06, FR-07 | Safety checks across doctors, finished courses, Test Saver | `phase-d`, `phase-o` |
-| FR-08, FR-09, FR-10 | Scoped, expiring share links (QR, optional code, revoke within seconds), access history and live viewer, source-linked doctor brief | `phase-ef` |
-| FR-11 | Emergency QR, public card, lock-screen image, wallet card, scan alerts | `phase-g` |
-| FR-12 | Break-glass: logged 2-hour full access, contact and patient emailed, revocable | `phase-i` |
-| FR-13 | Since your last view | `phase-j` |
-| FR-14 | Doctor write-back: notes and prescriptions, only where allowed | `phase-k` |
-| FR-15 (stretch) | FHIR R4 export | `phase-l` |
-| Extra | Consultation notes without a file; handwritten prescriptions | `phase-n` |
-| Extra | Alert centre | `phase-p` |
-| Extra | Test account shows every card with real uploads | `phase-h` |
+| Feature | Browser test |
+|---|---|
+| Sign up and log in (email or Google), profile, allergies, emergency contact | `phase-a` |
+| Upload (photos, PDFs, several pages, duplicate block), AI extraction with confidence and source text, check screen beside the original, brands to generics, units, dosing shorthand, days from quantity | `phase-b`, `phase-m` |
+| Consultation notes without a file; real handwritten prescriptions | `phase-n` |
+| Timeline with filters, lab trends with normal ranges | `phase-c` |
+| Safety checks across doctors, finished courses, Test Saver | `phase-d`, `phase-o` |
+| Scoped, expiring share links (QR, optional code, revoke within seconds), access history and live viewer, source-linked doctor brief | `phase-ef` |
+| Emergency QR, public card, lock-screen image, wallet card, scan alerts | `phase-g` |
+| Emergency full access: logged 2-hour access, contact and patient emailed, revocable | `phase-i` |
+| Since your last view | `phase-j` |
+| Doctor write-back: notes and prescriptions, only where allowed | `phase-k` |
+| FHIR R4 export | `phase-l` |
+| Alert centre | `phase-p` |
+| Test account shows every card with real uploads | `phase-h` |
 
 ## How it works
 
@@ -341,7 +341,7 @@ supabase/migrations/   schema, row-level security, triggers, reference data (55 
                        about 100 brands, 293 DDInter interaction pairs, test validity)
 scripts/               migrations, type generation, test account, sample document builder, browser tests
 demo-docs/             simulated prescriptions and lab reports (PDFs and phone-style photos)
-docs/                  product requirements (PRD), design system, screenshots, logo
+docs/                  design system, screenshots, logo
 ```
 
 ## Known limits and next steps
