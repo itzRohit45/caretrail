@@ -4,7 +4,7 @@
 
 Built in 24 hours at the IIITDM Kancheepuram web development hackathon (HealthTech track: *Lost in Transit: Fragmented Medical Records and Repeated Care Across Providers*).
 
-> Work in progress during the hackathon. See `STATUS.md` for what works right now.
+**Live:** https://caretrail-tan.vercel.app (no sign-up needed: use *Try the demo*). Progress log: `STATUS.md`.
 
 ## Problem
 
@@ -17,6 +17,29 @@ CareTrail reads prescriptions and lab reports into one verified, source-linked t
 1. **Source-linked doctor brief.** Every fact links to the document and text it came from.
 2. **Cross-prescriber safety checks.** Duplicate generics, drug interactions, allergy conflicts and recently done tests, across all doctors.
 3. **Consent you can see and revoke.** Scoped, expiring share links with a live "viewing now" indicator, instant revocation, an access log, and a two-tier emergency card: a public critical card, plus logged "break-glass" full access for clinicians that alerts the patient and their emergency contact.
+
+## What works
+
+Every requirement in the PRD's Must and Should lists, plus the FHIR export stretch goal, is built and covered by a browser test that runs against the live site (`E2E_BASE_URL=https://caretrail-tan.vercel.app node --env-file=.env.local scripts/e2e/<phase>.mjs`).
+
+| PRD | Feature | Test |
+|---|---|---|
+| FR-01 | Sign up, log in, profile, allergies, emergency contact | `phase-a` |
+| FR-02, FR-03, FR-04 | Upload (10 MB, PDF/JPG/PNG, duplicate block), AI extraction with confidence and source text, verify screen beside the original, normalisation (brands to generics, units, dosing shorthand) | `phase-b` |
+| FR-05 | Timeline with condition, type and date filters; lab trends with normal ranges | `phase-c` |
+| FR-06, FR-07 | Safety checks across doctors (duplicates, interactions, allergy clashes); Test Saver | `phase-d` |
+| FR-08, FR-09, FR-10 | Scoped, expiring share links (QR, optional code, revoke reaches the doctor within 5 s), access history and live "viewing now", source-linked doctor brief | `phase-ef` |
+| FR-11 | Emergency QR, public tier 1 card, lock-screen image, wallet card, scan alerts | `phase-g` |
+| FR-12 | Break-glass: logged 2-hour full access, contact and patient alerted, revocable | `phase-i` |
+| FR-13 | Since-last-visit view for a returning doctor | `phase-j` |
+| FR-14 | Doctor write-back: notes and prescriptions, only on links that allow it | `phase-k` |
+| FR-15 (Stretch) | FHIR R4 export (Patient, Condition, MedicationStatement, Observation with LOINC where certain, AllergyIntolerance), each fact noting its source | `phase-l` |
+| Demo | Try demo (private copy per visitor), sample doctor view, sample emergency card | `phase-h` |
+
+Accessibility: axe-core WCAG 2.1 AA on 18 screens, 0 violations (`scripts/e2e/audit.mjs`); every screen checked at 360 and 390 px (`scripts/e2e/mobile-shots.mjs`).
+
+### Security in one paragraph
+Row-level security on every patient table; the browser never reads patient data for doctors or emergency staff directly, every token request goes through one server gate that re-checks expiry, revocation and scope. Share and emergency tokens are 32 random bytes, kept in the URL fragment, and only their SHA-256 is stored; unknown, expired and revoked tokens get the same 410. Files live in a private bucket and are served through 5-minute signed URLs. The access log is insert-only (database triggers block update and delete, even for the service key). All input and all model output are validated with Zod; the doctor brief is built from database rows only. Token routes are rate limited per IP.
 
 ## Setup
 
@@ -32,7 +55,7 @@ npm run dev
 
 Seed the demo patients (runs the real extraction pipeline on `demo-docs/`): `npm run seed`.
 
-Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (36), browser tests in `scripts/e2e/` (`phase-a` to `phase-k`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
+Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (43), browser tests in `scripts/e2e/` (`phase-a` to `phase-l`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
 
 ## Try it
 

@@ -259,6 +259,11 @@ export function DoctorView() {
           <p className="rounded-control border-2 border-ink px-2 py-0.5 font-bold">Blood {b.patient.blood_group ?? "not recorded"}</p>
           <p className="rounded-pill bg-primary-soft px-3 py-1 font-semibold text-primary">{b.scope.description}</p>
           <p className="flex items-center gap-1.5 text-ink-2"><Clock aria-hidden className="size-4" /> Access ends in <span className="font-mono font-semibold text-ink tabular-nums">{countdown(b.scope.expires_at, now)}</span></p>
+          {b.write_back ? (
+            <a href="#wb-title" className="inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-rule-strong px-3 font-semibold text-primary hover:border-ink">
+              <NotePencil aria-hidden className="size-4" /> Add to record
+            </a>
+          ) : null}
           <p className="ml-auto text-ink-2">Viewing as <span className="font-semibold text-ink">{b.viewer}</span></p>
         </div>
       </header>
@@ -420,7 +425,7 @@ export function DoctorView() {
               {b.documents.map((d) => (
                 <li key={d.id}>
                   <button type="button" onClick={() => setOpened({ id: d.id, quote: null, title: `${d.type_label}, ${d.facility ?? ""}` })} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-control px-2 text-left hover:bg-primary-soft">
-                    <span><span className="font-semibold">{d.facility ?? d.type_label}</span> <span className="text-ink-2">{d.type_label}</span></span>
+                    <span className="py-1.5"><span className="block font-semibold">{d.facility ?? d.type_label}</span>{d.facility ? <span className="block text-ink-2">{d.type_label}</span> : null}</span>
                     <span className="shrink-0 whitespace-nowrap text-meta font-semibold text-primary">{day(d.date)}</span>
                   </button>
                 </li>
@@ -514,7 +519,7 @@ function WriteBack({ patientName, initial, headers, onEnded }: { patientName: st
   return (
     <section aria-labelledby="wb-title" className="mx-auto mb-4 max-w-7xl px-4">
       <div className="rounded-card border border-rule bg-sheet p-4">
-        <h2 id="wb-title" className="font-bold">Add to {first}&apos;s record</h2>
+        <h2 id="wb-title" className="scroll-mt-28 font-bold">Add to {first}&apos;s record</h2>
         <p className="text-ink-2">{first} allowed this link to add a note or a new prescription. Both are logged with your name, and {first} checks every prescription before it joins the record.</p>
         <div className="mt-3 grid gap-4 lg:grid-cols-2">
           <form onSubmit={saveNote} noValidate className="space-y-2">
@@ -655,7 +660,7 @@ function SinceView({ since, allergies, onOpen }: { since: SinceLastVisit; allerg
               {since.documents.map((d) => (
                 <li key={d.id}>
                   <button type="button" onClick={() => onOpen({ id: d.id, quote: null, title: `${d.type_label}, ${d.facility ?? ""}` })} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-control px-2 text-left hover:bg-primary-soft">
-                    <span><span className="font-semibold">{d.facility ?? d.type_label}</span> <span className="text-ink-2">{d.type_label}</span></span>
+                    <span className="py-1.5"><span className="block font-semibold">{d.facility ?? d.type_label}</span>{d.facility ? <span className="block text-ink-2">{d.type_label}</span> : null}</span>
                     <span className="shrink-0 whitespace-nowrap text-meta font-semibold text-primary">{day(d.date)}</span>
                   </button>
                 </li>

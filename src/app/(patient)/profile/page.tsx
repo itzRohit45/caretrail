@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Alert } from "@/components/ui/alert";
 import { PageBody, PageHeader, SheetSection } from "@/components/ui/page";
 import { AddAllergyForm, AllergyItem, ProfileForm } from "@/components/patient/profile-forms";
+import { buttonClass } from "@/components/ui/button";
+import { DownloadSimple } from "@phosphor-icons/react/ssr";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -42,6 +44,12 @@ export default async function ProfilePage() {
             <h3 className="mb-4 text-lead font-bold">Add an allergy</h3>
             <AddAllergyForm />
           </div>
+        </SheetSection>
+
+        <SheetSection id="export" title="Take your record anywhere" description="Download everything you have saved (allergies, conditions, medicines and results, each with its source) as a FHIR R4 file, the standard format hospital systems and health apps read.">
+          <a href="/api/export/fhir" download className={buttonClass("secondary")}>
+            <DownloadSimple aria-hidden className="size-5" /> Download my record (FHIR)
+          </a>
         </SheetSection>
       </PageBody>
     </>
