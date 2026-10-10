@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Eye, FileText, Key, Prohibit, Siren, NotePencil, WarningOctagon } from "@phosphor-icons/react";
+import { Eye, FileText, FilePlus, Key, Prohibit, Siren, NotePencil, WarningOctagon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 
 type Log = { id: number; share_link_id: string | null; viewer_name: string | null; viewer_reg_no: string | null; viewer_hospital: string | null; action: string; created_at: string };
@@ -11,6 +11,7 @@ const ACTIONS: Record<string, { Icon: typeof Eye; text: (who: string) => string;
   opened: { Icon: Eye, text: (who) => `${who} opened your records` },
   viewed_document: { Icon: FileText, text: (who) => `${who} viewed a document` },
   added_note: { Icon: NotePencil, text: (who) => `${who} added a note` },
+  added_document: { Icon: FilePlus, text: (who) => `${who} added a prescription for you to check` },
   otp_failed: { Icon: Key, text: (who) => `${who} entered a wrong code`, flag: "caution" },
   denied_out_of_scope: { Icon: Prohibit, text: (who) => `${who} tried to open something you did not share. It was blocked.`, flag: "caution" },
   emergency_scan: { Icon: Siren, text: () => "Your emergency card was scanned", flag: "caution" },

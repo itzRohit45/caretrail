@@ -7,6 +7,7 @@ import { Camera, FilePlus, FileText, ImageSquare, CheckCircle, CircleNotch, Arro
 import { buttonClass } from "@/components/ui/button";
 import { ACCEPTED_TYPES, DOC_TYPES, DOC_TYPE_LABELS, MAX_UPLOAD_BYTES } from "@/lib/schemas/documents";
 import { cn } from "@/lib/cn";
+import { putWithProgress, sha256 } from "@/lib/upload-client";
 
 type DocType = (typeof DOC_TYPES)[number];
 type Phase =
@@ -17,24 +18,6 @@ type Phase =
   | { name: "error"; message: string; retry?: boolean; duplicateId?: string };
 
 const mb = (n: number) => `${(n / 1048576).toFixed(1)} MB`;
-
-async function sha256(file: File) {
-  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function putWithProgress(url: string, file: File, onProgress: (p: number) => void) {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("content-type", file.type);
-    xhr.setRequestHeader("x-upsert", "true");
-    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`status ${xhr.status}`)));
-    xhr.onerror = () => reject(new Error("network"));
-    xhr.send(file);
-  });
-}
 
 export function Uploader() {
   const router = useRouter();

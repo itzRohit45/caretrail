@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus, WarningOctagon, Warning, Pill, Receipt, QrCode, Siren } from "@phosphor-icons/react/ssr";
+import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus, WarningOctagon, Warning, Pill, Receipt, QrCode, Siren, NotePencil } from "@phosphor-icons/react/ssr";
 import { formatDateTime } from "@/lib/format";
 import { requirePatient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -32,7 +32,7 @@ export default async function HomePage() {
     supabase.from("allergies").select("*").eq("patient_id", patient.id).order("created_at", { ascending: true }),
     supabase
       .from("documents")
-      .select("id, type, doc_date, created_at, facility, doctor_name, extraction_status")
+      .select("id, type, doc_date, created_at, facility, doctor_name, extraction_status, uploaded_by")
       .eq("patient_id", patient.id)
       .eq("upload_status", "uploaded")
       .order("created_at", { ascending: false })
@@ -56,6 +56,7 @@ export default async function HomePage() {
     .limit(20);
   const scans = emergencyEvents?.filter((e) => e.action === "emergency_scan");
   const breakGlass = emergencyEvents?.find((e) => e.action === "break_glass");
+  const { data: notes } = await supabase.from("doctor_notes").select("id, doctor_name, note, created_at").eq("patient_id", patient.id).order("created_at", { ascending: false }).limit(3);
   const waiting = (docs ?? []).filter((d) => d.extraction_status === "needs_review" || d.extraction_status === "failed");
 
   const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
@@ -171,6 +172,20 @@ export default async function HomePage() {
             <ul className="mt-3 divide-y divide-verify-rule">
               {waiting.map((d) => (
                 <RecordRow key={d.id} doc={d} />
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {notes?.length ? (
+          <section aria-labelledby="notes-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-6">
+            <h2 id="notes-title" className="flex items-center gap-2 text-title font-bold"><NotePencil aria-hidden className="size-6" /> Notes from your doctors</h2>
+            <ul className="mt-3 divide-y divide-rule">
+              {notes.map((n) => (
+                <li key={n.id} className="py-3">
+                  <p className="whitespace-pre-line">{n.note}</p>
+                  <p className="mt-1 text-dense text-ink-2">{n.doctor_name}, {formatDateTime(n.created_at)}</p>
+                </li>
               ))}
             </ul>
           </section>

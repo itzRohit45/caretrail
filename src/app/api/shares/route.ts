@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       expires_at: new Date(Date.now() + EXPIRY_OPTIONS[s.expires_in]).toISOString(),
       require_otp: s.require_otp,
       otp_code: otp,
+      allow_write_back: s.allow_write_back,
     })
     .select("id, expires_at")
     .single();
@@ -41,7 +42,7 @@ export async function GET() {
   if (!session) return unauthorized();
   const { supabase, patient } = session;
   const [links, logs, live] = await Promise.all([
-    supabase.from("share_links").select("id, label, scope_type, scope_conditions, scope_months, expires_at, revoked_at, require_otp, otp_code, is_break_glass, created_at").eq("patient_id", patient.id).order("created_at", { ascending: false }),
+    supabase.from("share_links").select("id, label, scope_type, scope_conditions, scope_months, expires_at, revoked_at, require_otp, otp_code, is_break_glass, allow_write_back, created_at").eq("patient_id", patient.id).order("created_at", { ascending: false }),
     supabase.from("access_logs").select("share_link_id, action").eq("patient_id", patient.id).in("action", ["opened", "break_glass"]),
     supabase.from("viewer_sessions").select("share_link_id, viewer_name, last_seen_at").eq("patient_id", patient.id).gte("last_seen_at", new Date(Date.now() - LIVE_MS).toISOString()),
   ]);

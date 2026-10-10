@@ -1,7 +1,7 @@
-import { CheckCircle, Question, UserCheck, ClockCounterClockwise } from "@phosphor-icons/react/ssr";
+import { CheckCircle, Question, UserCheck, ClockCounterClockwise, Stethoscope } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/cn";
 
-type Tone = "verified" | "patient-verified" | "needs-check" | "unrecognised" | "recent";
+type Tone = "verified" | "patient-verified" | "needs-check" | "unrecognised" | "recent" | "doctor-added";
 
 const tones: Record<Tone, { cls: string; Icon: typeof CheckCircle; label: string }> = {
   verified: { cls: "bg-verified-soft text-verified", Icon: CheckCircle, label: "Verified" },
@@ -9,6 +9,7 @@ const tones: Record<Tone, { cls: string; Icon: typeof CheckCircle; label: string
   "needs-check": { cls: "bg-verify-soft text-verify", Icon: Question, label: "Needs check" },
   unrecognised: { cls: "bg-sheet-sunk text-ink-2", Icon: Question, label: "Unrecognised" },
   recent: { cls: "bg-primary-soft text-primary", Icon: ClockCounterClockwise, label: "Recent" },
+  "doctor-added": { cls: "bg-primary-soft text-primary", Icon: Stethoscope, label: "Added by your doctor" },
 };
 
 /** Status always shows icon + word, never colour alone. */

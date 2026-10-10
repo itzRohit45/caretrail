@@ -56,16 +56,33 @@ try {
     const d = await (await browser.newContext({ viewport: { width: 1366, height: 900 }, colorScheme: scheme })).newPage();
     await d.goto(`${BASE}/demo/doctor`);
     if (scheme === "light") await audit(d, "doctor-gate");
-    await d.getByLabel("Your name").fill("Dr. Audit");
     await d.getByRole("button", { name: "Open records" }).click();
-    await d.getByRole("heading", { name: "Ravi Kumar" }).waitFor();
+    await d.getByRole("button", { name: /Since your last view/ }).waitFor();
+    if (scheme === "light") await audit(d, "doctor-since");
+    else await d.screenshot({ path: `${shots}/dark-doctor-since.png`, fullPage: true, caret: "initial" });
+    await d.getByRole("button", { name: "Full brief" }).click();
+    await d.getByRole("heading", { name: /Key results/ }).waitFor();
     if (scheme === "light") await audit(d, "doctor-brief");
     else await d.screenshot({ path: `${shots}/dark-doctor.png`, fullPage: true, caret: "initial" });
+    // Write-back panel: a link from the demo copy with "Let the doctor add to my record" on.
+    const wb = await p.evaluate(() =>
+      fetch("/api/shares", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scope_type: "all", expires_in: "1h", allow_write_back: true }) }).then((r) => r.json()),
+    );
+    const w = await (await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme })).newPage();
+    await w.goto(wb.data.url);
+    await w.getByLabel("Your name").fill("Dr. Audit");
+    await w.getByRole("button", { name: "Open records" }).click();
+    await w.getByRole("heading", { name: /Add to Ravi's record/ }).waitFor();
+    if (scheme === "light") await audit(w, "doctor-write-back");
+    else await w.screenshot({ path: `${shots}/dark-write-back.png`, fullPage: true, caret: "initial" });
     const e = await (await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme })).newPage();
     await e.goto(`${BASE}/demo/emergency`);
     await e.getByRole("heading", { name: "Arun Prakash" }).waitFor();
     if (scheme === "light") await audit(e, "emergency");
     else await e.screenshot({ path: `${shots}/dark-emergency.png`, caret: "initial" });
+    await e.getByRole("button", { name: "Request full record" }).click();
+    await e.getByLabel("Medical registration number").waitFor();
+    if (scheme === "light") await audit(e, "emergency-break-glass");
     await ctx.close();
   }
 } finally {

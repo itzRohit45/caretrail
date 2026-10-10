@@ -11,6 +11,7 @@ export const createShareSchema = z
     scope_months: z.union([z.literal(3), z.literal(6), z.literal(12)]).nullable().default(null),
     expires_in: z.enum(["1h", "24h", "7d"]),
     require_otp: z.boolean().default(false),
+    allow_write_back: z.boolean().default(false),
   })
   .refine((s) => s.scope_type !== "conditions" || s.scope_conditions.length > 0, { message: "Choose at least one condition.", path: ["scope_conditions"] })
   .refine((s) => s.scope_type !== "months" || s.scope_months !== null, { message: "Choose how many months.", path: ["scope_months"] });
@@ -36,4 +37,9 @@ export const breakGlassSchema = z.object({
     .min(3, "Enter your medical registration number.")
     .max(40)
     .regex(REG_NO, "Use letters, numbers, spaces, dots, slashes or dashes."),
+});
+
+/** FR-14: a doctor's note through a write-back link. */
+export const doctorNoteSchema = z.object({
+  note: z.string({ error: "Write the note first." }).trim().min(2, "Write the note first.").max(2000, "Keep the note under 2000 characters."),
 });

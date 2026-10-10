@@ -6,7 +6,7 @@ import { CONDITION_LABELS } from "@/lib/normalise/conditions";
 import { DateBlock } from "@/components/ui/date-block";
 import { Badge } from "@/components/ui/badge";
 import { DOC_ICONS } from "@/components/records/recent-records";
-import { medicineLabel } from "@/lib/format";
+import { addedBy, medicineLabel } from "@/lib/format";
 
 const monthLabel = (iso: string) =>
   new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(`${iso}T00:00:00+05:30`));
@@ -55,6 +55,7 @@ export function TimelineList({ entries }: { entries: TimelineEntry[] }) {
                       </p>
                       <p className="mt-1 text-lead font-bold">{e.facility ?? "Unnamed record"}</p>
                       {e.doctor_name ? <p className="text-ink-2">{e.doctor_name}</p> : null}
+                      {addedBy(e.uploaded_by) ? <p className="text-dense font-semibold text-primary">Added by {addedBy(e.uploaded_by)}</p> : null}
                       {lines.length ? (
                         <ul className="mt-2 space-y-0.5 text-dense text-ink">
                           {lines.map((l) => (

@@ -32,13 +32,14 @@ npm run dev
 
 Seed the demo patients (runs the real extraction pipeline on `demo-docs/`): `npm run seed`.
 
-Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (36), browser tests in `scripts/e2e/` (`phase-a` to `phase-j`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
+Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (36), browser tests in `scripts/e2e/` (`phase-a` to `phase-k`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
 
 ## Try it
 
 - **Try demo:** on the landing or login page, choose *Try as Ravi*, *Lakshmi* or *Arun*. You get a private copy of a simulated patient (no sign-up).
 - **Doctor's view:** *Open a doctor's view* mints a real 1-hour link to Ravi's record. It is pre-filled as Ravi's diabetologist (Dr. A. Suresh, registration TNMC 61234), whose simulated last view was on 20 Aug 2026, so it opens on *Since your last view*: two new prescriptions from other doctors, the penicillin clash, the duplicate metformin and the rising HbA1c. Change the name to see the record as a new doctor.
 - **Emergency card:** *Open an emergency card* shows Arun's tier 1 card. At the bottom, *Request full record* is the tier 2 break-glass: enter a name, hospital and registration number to open the full record for 2 hours.
+- **Doctor write-back:** *Try as Ravi*, open *Sharing*, tick *Let the doctor add to my record* and create the link. Open it in another browser as a doctor: add a note and upload `demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg` (in the repo). The prescription goes through the same extraction and waits on the patient's Home, marked *Added by* the doctor, until the patient checks the doses.
 - **See break-glass from the patient's side:** *Try as Arun*, add your own email as the emergency contact in Profile, create the emergency QR in *Emergency card*, open the QR link on another device and request the full record. Your inbox gets the alert; Home, Sharing and Access history flag the access, and *End access* stops it.
 
 ### How the demo data was made

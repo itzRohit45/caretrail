@@ -10,7 +10,7 @@ import { reviewPlan } from "@/lib/records/review";
 import { loadReference } from "@/lib/records/save";
 import { matchBrand } from "@/lib/normalise/brands";
 import { toIsoDate } from "@/lib/normalise/dates";
-import { formatDate } from "@/lib/format";
+import { addedBy, formatDate } from "@/lib/format";
 import { DOC_TYPE_LABELS } from "@/lib/schemas/documents";
 import type { ReviewModel } from "@/lib/records/view";
 import { PageBody, PageHeader } from "@/components/ui/page";
@@ -85,7 +85,11 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
         <PageHeader
           kicker={typeLabel}
           title={model.failed ? "Add the details" : "Check what we read"}
-          subtitle={model.failed ? "Type in what the document says. It takes a minute." : "Compare with the document. Fix anything that is wrong, then save."}
+          subtitle={
+            addedBy(doc.uploaded_by)
+              ? `${addedBy(doc.uploaded_by)} added this through your share link. Check every medicine and dose; nothing joins your record until you save.`
+              : model.failed ? "Type in what the document says. It takes a minute." : "Compare with the document. Fix anything that is wrong, then save."
+          }
           width="wide"
         />
         <PageBody width="wide">
@@ -115,6 +119,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
           <span className="flex flex-wrap items-center gap-2">
             {doc.doc_date ? formatDate(doc.doc_date) : formatDate(doc.created_at)}
             {doc.doc_date_source === "upload" ? <Badge tone="needs-check">Upload date used</Badge> : null}
+            {addedBy(doc.uploaded_by) ? <Badge tone="doctor-added">Added by {addedBy(doc.uploaded_by)}</Badge> : null}
           </span>
         }
         title={skipped ? "Not a medical document" : (doc.facility ?? typeLabel)}

@@ -44,6 +44,11 @@ export function daysBetween(fromIso: string, toIso: string) {
   return Math.round((toDate(toIso).getTime() - toDate(fromIso).getTime()) / 86_400_000);
 }
 
+/** Documents a doctor uploaded through a write-back link carry "doctor:<name>". */
+export function addedBy(uploadedBy: string | null | undefined) {
+  return uploadedBy?.startsWith("doctor:") ? uploadedBy.slice("doctor:".length) : null;
+}
+
 /** "Gluconorm 500" + "500" reads as "Gluconorm 500", not "Gluconorm 500 500". */
 export function medicineLabel(brand: string, dose: string | null) {
   const strength = dose?.trim().match(/^([\d.]+)\s*(mg|mcg|g|ml|iu)?$/i)?.[1];

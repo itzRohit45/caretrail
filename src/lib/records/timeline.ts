@@ -16,7 +16,7 @@ export const timelineFilterSchema = z.object({
 });
 export type TimelineFilters = z.infer<typeof timelineFilterSchema>;
 
-export type TimelineEntry = Pick<Row<"documents">, "id" | "type" | "doc_date" | "doc_date_source" | "created_at" | "facility" | "doctor_name" | "extraction_status" | "condition_tags"> & {
+export type TimelineEntry = Pick<Row<"documents">, "id" | "type" | "doc_date" | "doc_date_source" | "created_at" | "facility" | "doctor_name" | "extraction_status" | "condition_tags" | "uploaded_by"> & {
   date: string;
   medications: Pick<Row<"medications">, "brand_name" | "dose">[];
   labs: Pick<Row<"lab_results">, "test_name" | "value" | "value_text" | "unit" | "test_code">[];
@@ -36,7 +36,7 @@ export async function loadTimeline(db: SupabaseClient<Database>, patientId: stri
   const [docs, meds, labs, conds] = await Promise.all([
     db
       .from("documents")
-      .select("id, type, doc_date, doc_date_source, created_at, facility, doctor_name, extraction_status, condition_tags")
+      .select("id, type, doc_date, doc_date_source, created_at, facility, doctor_name, extraction_status, condition_tags, uploaded_by")
       .eq("patient_id", patientId)
       .eq("upload_status", "uploaded"),
     db.from("medications").select("source_document_id, brand_name, dose").eq("patient_id", patientId),

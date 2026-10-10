@@ -1,15 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Prohibit, FileText, WarningOctagon, Warning, Info, ArrowUpRight, ArrowDownRight, ArrowRight, Clock, X, CircleNotch, Eye, LockKey, UserCheck, Siren } from "@phosphor-icons/react";
+import { Prohibit, FilePlus, NotePencil, FileText, WarningOctagon, Warning, Info, ArrowUpRight, ArrowDownRight, ArrowRight, Clock, X, CircleNotch, Eye, LockKey, UserCheck, Siren } from "@phosphor-icons/react";
 import type { Brief, SinceLastVisit, Source } from "@/lib/brief/build";
 import { Wordmark } from "@/components/wordmark";
 import { buttonClass } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
 import { SourceViewer } from "@/components/records/source-viewer";
 import { cn } from "@/lib/cn";
+import { putWithProgress, sha256 } from "@/lib/upload-client";
 
-type Loaded = Brief & { viewer: string; break_glass: boolean };
+type WriteBackData = {
+  notes: { id: string; doctor_name: string; note: string; created_at: string }[];
+  uploads: { id: string; filename: string | null; status: string; created_at: string }[];
+};
+type Loaded = Brief & { viewer: string; break_glass: boolean; write_back: WriteBackData | null };
 type Phase =
   | { name: "checking" }
   | { name: "ended" }
@@ -425,12 +430,136 @@ export function DoctorView() {
         </div>
       </main>
       )}
+      {b.write_back ? <WriteBack patientName={b.patient.name} initial={b.write_back} headers={headers} onEnded={end} /> : null}
       <footer className="mx-auto max-w-7xl px-4 pb-6 text-meta text-ink-3">
         Built only from the patient&apos;s stored records. Every line opens its source document. CareTrail is an information tool, not medical advice.
       </footer>
 
       {opened ? <SourceDialog opened={opened} headers={headers} onClose={() => setOpened(null)} onEnded={end} /> : null}
     </div>
+  );
+}
+
+const UPLOAD_STATUS: Record<string, string> = {
+  needs_review: "Waiting for the patient to check",
+  completed: "Added to the record",
+  failed: "Could not be read; the patient will enter it",
+  skipped: "Not a medical document; nothing added",
+  pending: "Uploading",
+  processing: "Reading",
+};
+const ACCEPT = ["application/pdf", "image/jpeg", "image/png"];
+const timeOf = (iso: string) => new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(iso));
+
+/** FR-14: on links where the patient allowed it, the doctor adds a note or a new prescription. */
+function WriteBack({ patientName, initial, headers, onEnded }: { patientName: string; initial: WriteBackData; headers: () => Record<string, string>; onEnded: () => void }) {
+  const first = patientName.split(" ")[0];
+  const [notes, setNotes] = useState(initial.notes);
+  const [uploads, setUploads] = useState(initial.uploads);
+  const [note, setNote] = useState("");
+  const [noteState, setNoteState] = useState<{ busy?: boolean; error?: string; saved?: boolean }>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [inputKey, setInputKey] = useState(0);
+  const [up, setUp] = useState<{ name: "idle" } | { name: "uploading"; percent: number } | { name: "reading" } | { name: "done"; text: string } | { name: "error"; text: string }>({ name: "idle" });
+
+  async function saveNote(e: React.FormEvent) {
+    e.preventDefault();
+    setNoteState({ busy: true });
+    const res = await fetch("/api/s/notes", { method: "POST", headers: { ...headers(), "content-type": "application/json" }, body: JSON.stringify({ note }) }).catch(() => null);
+    if (res?.status === 410) return onEnded();
+    const body = await res?.json().catch(() => null);
+    if (!res?.ok) return setNoteState({ error: body?.error?.fields?.[0]?.message ?? body?.error?.message ?? "The note could not be saved. Try again." });
+    setNotes((n) => [body.data, ...n]);
+    setNote("");
+    setNoteState({ saved: true });
+  }
+
+  async function upload() {
+    if (!file) return setUp({ name: "error", text: "Choose the prescription first." });
+    if (!ACCEPT.includes(file.type)) return setUp({ name: "error", text: "Only PDF, JPG or PNG files can be uploaded." });
+    if (file.size > 10 * 1048576) return setUp({ name: "error", text: `Files can be up to 10 MB. This one is ${(file.size / 1048576).toFixed(1)} MB.` });
+    setUp({ name: "uploading", percent: 0 });
+    const start = await fetch("/api/s/documents", {
+      method: "POST",
+      headers: { ...headers(), "content-type": "application/json" },
+      body: JSON.stringify({ file_hash: await sha256(file), size_bytes: file.size, mime_type: file.type, original_filename: file.name }),
+    }).catch(() => null);
+    if (start?.status === 410) return onEnded();
+    const started = await start?.json().catch(() => null);
+    if (!start?.ok) return setUp({ name: "error", text: started?.error?.message ?? "The upload could not start. Try again." });
+    try {
+      await putWithProgress(started.data.upload_url, file, (percent) => setUp({ name: "uploading", percent }));
+    } catch {
+      return setUp({ name: "error", text: "The upload stopped. Check the connection and try again." });
+    }
+    setUp({ name: "reading" });
+    const processed = await fetch(`/api/s/documents/${started.data.document_id}/process`, { method: "POST", headers: headers() }).catch(() => null);
+    if (processed?.status === 410) return onEnded();
+    const result = await processed?.json().catch(() => null);
+    if (!processed?.ok) return setUp({ name: "error", text: result?.error?.message ?? "The prescription could not be read. Try again." });
+    const status: string = result.data.status;
+    setUploads((u) => [{ id: started.data.document_id, filename: file.name, status, created_at: new Date().toISOString() }, ...u.filter((x) => x.id !== started.data.document_id)]);
+    setFile(null);
+    setInputKey((k) => k + 1); // clears the chosen file from the input
+    setUp({
+      name: "done",
+      text:
+        status === "needs_review" ? `Sent to ${first} to check. It joins the record once they confirm the medicines and doses.`
+        : status === "skipped" ? "This does not look like a medical document, so nothing was added."
+        : `Saved, but it could not be read automatically. ${first} will enter it by hand.`,
+    });
+  }
+
+  const busy = up.name === "uploading" || up.name === "reading";
+  return (
+    <section aria-labelledby="wb-title" className="mx-auto mb-4 max-w-7xl px-4">
+      <div className="rounded-card border border-rule bg-sheet p-4">
+        <h2 id="wb-title" className="font-bold">Add to {first}&apos;s record</h2>
+        <p className="text-ink-2">{first} allowed this link to add a note or a new prescription. Both are logged with your name, and {first} checks every prescription before it joins the record.</p>
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <form onSubmit={saveNote} noValidate className="space-y-2">
+            <label htmlFor="wb-note" className="flex items-center gap-1.5 font-semibold"><NotePencil aria-hidden className="size-5" /> Note for {first}</label>
+            <textarea id="wb-note" value={note} onChange={(e) => { setNote(e.target.value); setNoteState({}); }} rows={3} maxLength={2000} className={cn(inputClass, "min-h-24 py-2")} />
+            {noteState.error ? <p role="alert" className="font-semibold text-severe">{noteState.error}</p> : null}
+            {noteState.saved ? <p role="status" className="font-semibold text-verified">Note saved to {first}&apos;s record.</p> : null}
+            <button type="submit" disabled={noteState.busy} className={buttonClass("secondary", "dense")}>
+              {noteState.busy ? <CircleNotch aria-hidden className="size-5 animate-spin" /> : null} Save note
+            </button>
+          </form>
+          <div className="space-y-2">
+            <label htmlFor="wb-file" className="flex items-center gap-1.5 font-semibold"><FilePlus aria-hidden className="size-5" /> New prescription</label>
+            <input key={inputKey} id="wb-file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" disabled={busy} onChange={(e) => { setFile(e.target.files?.[0] ?? null); setUp({ name: "idle" }); }} className="block w-full rounded-control border border-rule-strong bg-sheet p-2 text-dense file:mr-3 file:min-h-10 file:rounded-pill file:border-0 file:bg-primary-soft file:px-4 file:font-semibold file:text-primary" />
+            <p className="text-meta text-ink-2">PDF, JPG or PNG, up to 10 MB. Read by the same extraction as the patient&apos;s uploads.</p>
+            {up.name === "uploading" ? <p role="status" className="font-semibold">Uploading {up.percent}%</p> : null}
+            {up.name === "reading" ? <p role="status" className="flex items-center gap-2 font-semibold"><CircleNotch aria-hidden className="size-5 animate-spin" /> Reading the prescription</p> : null}
+            {up.name === "done" ? <p role="status" className="font-semibold text-verified">{up.text}</p> : null}
+            {up.name === "error" ? <p role="alert" className="font-semibold text-severe">{up.text}</p> : null}
+            <button type="button" onClick={upload} disabled={busy} className={buttonClass("secondary", "dense")}>
+              {busy ? <CircleNotch aria-hidden className="size-5 animate-spin" /> : <FilePlus aria-hidden className="size-5" />} Upload prescription
+            </button>
+          </div>
+        </div>
+        {notes.length || uploads.length ? (
+          <div className="mt-4 border-t border-rule pt-3">
+            <h3 className="font-semibold">Added through this link</h3>
+            <ul className="mt-1 divide-y divide-rule">
+              {uploads.map((u) => (
+                <li key={u.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2">
+                  <span className="flex items-center gap-1.5"><FilePlus aria-hidden className="size-4 shrink-0" /> {u.filename ?? "Prescription"}</span>
+                  <span className="text-ink-2">{UPLOAD_STATUS[u.status] ?? u.status}, {timeOf(u.created_at)}</span>
+                </li>
+              ))}
+              {notes.map((n) => (
+                <li key={n.id} className="py-2">
+                  <p className="whitespace-pre-line">{n.note}</p>
+                  <p className="text-meta text-ink-3">{n.doctor_name}, {timeOf(n.created_at)}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

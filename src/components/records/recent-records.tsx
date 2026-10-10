@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { FileText, Prescription, Flask, FirstAid, Scan, CaretRight } from "@phosphor-icons/react/ssr";
 import { DOC_TYPE_LABELS } from "@/lib/schemas/documents";
-import { formatDate } from "@/lib/format";
+import { addedBy, formatDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import type { Row } from "@/lib/db/types";
 
 export const DOC_ICONS = { prescription: Prescription, lab_report: Flask, discharge_summary: FirstAid, scan_report: Scan, other: FileText } as const;
 
-type Doc = Pick<Row<"documents">, "id" | "type" | "doc_date" | "created_at" | "facility" | "doctor_name" | "extraction_status">;
+type Doc = Pick<Row<"documents">, "id" | "type" | "doc_date" | "created_at" | "facility" | "doctor_name" | "extraction_status"> & { uploaded_by?: string };
 
 export function RecordRow({ doc }: { doc: Doc }) {
   const Icon = DOC_ICONS[doc.type as keyof typeof DOC_ICONS] ?? FileText;
@@ -23,6 +23,7 @@ export function RecordRow({ doc }: { doc: Doc }) {
           <span className="block text-dense text-ink-2">
             {DOC_TYPE_LABELS[doc.type as keyof typeof DOC_TYPE_LABELS]}, {formatDate(doc.doc_date ?? doc.created_at)}
           </span>
+          {addedBy(doc.uploaded_by) ? <span className="block text-dense font-semibold text-primary">Added by {addedBy(doc.uploaded_by)}</span> : null}
         </span>
         {waiting ? <Badge tone="needs-check">Check now</Badge> : null}
         <CaretRight aria-hidden className="size-5 shrink-0 text-ink-3" />

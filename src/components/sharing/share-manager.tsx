@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, ShareNetwork, CheckCircle, CircleNotch, LinkSimple, Eye, Prohibit, Key, Clock, WarningOctagon } from "@phosphor-icons/react";
+import { Copy, ShareNetwork, CheckCircle, CircleNotch, LinkSimple, Eye, Prohibit, Key, Clock, WarningOctagon, NotePencil } from "@phosphor-icons/react";
 import { CONDITION_FILTERS } from "@/lib/records/timeline";
 import { CONDITION_LABELS } from "@/lib/normalise/conditions";
 import { describeScope } from "@/lib/sharing/scope";
@@ -22,6 +22,7 @@ type Link = {
   viewing_now: string[];
   otp_code: string | null;
   is_break_glass: boolean;
+  allow_write_back: boolean;
 };
 type Created = { url: string; otp_code: string | null; expires_at: string; label: string; scope: string };
 
@@ -65,6 +66,7 @@ export function ShareManager() {
   const [months, setMonths] = useState<3 | 6 | 12>(6);
   const [expiry, setExpiry] = useState<"1h" | "24h" | "7d">("24h");
   const [otp, setOtp] = useState(false);
+  const [writeBack, setWriteBack] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
@@ -90,7 +92,7 @@ export function ShareManager() {
   async function create() {
     setBusy(true);
     setError(null);
-    const body = { label, scope_type: scope, scope_conditions: scope === "conditions" ? conditions : [], scope_months: scope === "months" ? months : null, expires_in: expiry, require_otp: otp };
+    const body = { label, scope_type: scope, scope_conditions: scope === "conditions" ? conditions : [], scope_months: scope === "months" ? months : null, expires_in: expiry, require_otp: otp, allow_write_back: writeBack };
     const res = await fetch("/api/shares", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
     const json = await res?.json().catch(() => null);
     setBusy(false);
@@ -203,6 +205,13 @@ export function ShareManager() {
               <span className="block text-dense text-ink-2">You read a 6-digit code to the doctor. Useful if the link could be forwarded.</span>
             </span>
           </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-control border border-rule p-4">
+            <input type="checkbox" checked={writeBack} onChange={(e) => setWriteBack(e.target.checked)} className="mt-1 size-5 accent-primary" />
+            <span>
+              <span className="block font-semibold">Let the doctor add to my record</span>
+              <span className="block text-dense text-ink-2">They can leave a note or upload a new prescription. You check every prescription before it joins your record.</span>
+            </span>
+          </label>
           {error ? <p role="alert" className="font-semibold text-severe">{error}</p> : null}
           <button type="button" onClick={create} disabled={busy || (scope === "conditions" && conditions.length === 0)} className={buttonClass("primary")}>
             {busy ? <CircleNotch aria-hidden className="size-5 animate-spin" /> : <LinkSimple aria-hidden weight="bold" className="size-5" />}
@@ -237,6 +246,7 @@ export function ShareManager() {
                   <div className="flex items-center gap-1.5"><Clock aria-hidden className="size-4 text-ink-2" /><dt className="sr-only">Ends</dt><dd>Ends in <span className="font-semibold">{remaining(l.expires_at)}</span></dd></div>
                   <div className="flex items-center gap-1.5"><Eye aria-hidden className="size-4 text-ink-2" /><dt className="sr-only">Views</dt><dd><span className="font-semibold">{l.views}</span> {l.views === 1 ? "view" : "views"}</dd></div>
                   {l.otp_code ? <div className="flex items-center gap-1.5"><Key aria-hidden className="size-4 text-ink-2" /><dt>Code</dt><dd className="font-mono font-semibold">{l.otp_code}</dd></div> : null}
+                  {l.allow_write_back ? <div className="flex items-center gap-1.5"><NotePencil aria-hidden className="size-4 text-ink-2" /><dt className="sr-only">Doctor can add</dt><dd>Can add notes and prescriptions</dd></div> : null}
                 </dl>
                 <div className="mt-4 border-t border-rule pt-3">
                   {confirmRevoke === l.id ? (

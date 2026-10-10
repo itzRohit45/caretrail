@@ -64,3 +64,14 @@ export async function previousVisit(patient: Pick<Row<"patients">, "id" | "is_de
   const { data } = await query.order("created_at", { ascending: false }).limit(500);
   return data?.find((l) => l.viewer_name && l.viewer_reg_no && sameDoctorName(l.viewer_name, name) && sameRegNo(l.viewer_reg_no, regNo))?.created_at ?? null;
 }
+
+/** Write-back routes: an opened viewer session on a link where the patient allowed adding to the record. */
+export async function resolveWriter(request: Request, bucket: string) {
+  const res = await resolveViewer(request, bucket);
+  if ("response" in res) return res;
+  if (!res.ctx.link.allow_write_back) return { response: fail(403, "The patient has not allowed adding to their record through this link.") };
+  return res;
+}
+
+/** Documents a doctor uploads are marked with their name; the patient sees "Added by <name>". */
+export const doctorUploader = (viewerName: string) => `doctor:${viewerName}`;
