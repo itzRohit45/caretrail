@@ -61,8 +61,7 @@ try {
   check("medicine card is compact: the major interaction by name", await seen(page.getByText("Major interaction: Clopilet and Omez")) && (await seen(page.getByText(/more to discuss with your doctor/))));
   await page.screenshot({ path: `${shots}/alerts-home-mobile.png`, fullPage: false, caret: "initial" });
 
-  const bell = page.getByRole("button", { name: /^Alerts, \d+ new$/ });
-  check(`bell shows the number of new alerts (${await bell.getAttribute("aria-label")})`, /Alerts, 5 new/.test((await bell.getAttribute("aria-label")) ?? ""));
+  check("bell shows the number of new alerts (5)", await seen(page.getByRole("button", { name: "Alerts, 5 new" }), 15000));
   await page.getByRole("button", { name: /View all alerts/ }).click();
   const panel = page.getByRole("dialog", { name: "Alerts" });
   check("panel opens with every alert", await seen(panel.getByText("Note from Dr. Meena Raghavan")) && (await seen(panel.getByText(/records? needs? your check/))) && (await seen(panel.getByText(/medicine warnings/))));
@@ -75,7 +74,7 @@ try {
   await page.reload();
   await page.locator("section[aria-label=Alerts] > div").first().waitFor();
   check("still dismissed after reload", !(/Emergency full access/.test(await page.locator("section[aria-label=Alerts]").innerText())));
-  check("bell count went down", /Alerts, 4 new/.test((await page.getByRole("button", { name: /^Alerts/ }).getAttribute("aria-label")) ?? ""));
+  check("bell count went down", await seen(page.getByRole("button", { name: "Alerts, 4 new" }), 15000));
   await page.getByRole("button", { name: /^Alerts/ }).click();
   check("dismissed alert kept in the panel under Seen", await seen(page.getByRole("dialog").locator("section[aria-label=Seen]").getByText(/Emergency full access/)));
   await page.getByRole("dialog").getByRole("button", { name: "Dismiss all" }).click();
