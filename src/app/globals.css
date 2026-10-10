@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Tokens: see docs/DESIGN.md. Tailwind's default scales are cleared so only these exist. */
+/* Design tokens. Tailwind's default scales are cleared so only these exist. */
 
 :root {
   color-scheme: light;

@@ -1,11 +1,11 @@
-// Screenshots for README.md (docs/screenshots). Test account read-only (links it makes are ended);
+// Screenshots for README.md (.github/readme/screenshots). Test account read-only (links it makes are ended);
 // a temporary account for uploads, the emergency card and alerts. Usage: E2E_BASE_URL=... node --env-file=.env.local scripts/e2e/readme-shots.mjs
 import { createHash, randomBytes } from "node:crypto";
 import { chromium } from "playwright-core";
 import { createClient } from "@supabase/supabase-js";
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-const out = "docs/screenshots";
+const out = ".github/readme/screenshots";
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const desktop = () => browser.newContext({ viewport: { width: 1280, height: 860 }, deviceScaleFactor: 1 }).then((c) => c.newPage());

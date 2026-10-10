@@ -23,3 +23,11 @@ public/pdf.worker.min.mjs
 
 # real documents used for recording the demo video: never published
 uploads/
+
+# internal notes and planning material: kept locally, never published
+CLAUDE.md
+AGENTS.md
+PRODUCT.md
+STATUS.md
+skills-lock.json
+docs/

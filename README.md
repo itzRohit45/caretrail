@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" width="72" alt="CareTrail logo">
+  <img src=".github/readme/logo.svg" width="72" alt="CareTrail logo">
 </p>
 
 <h1 align="center">CareTrail</h1>
@@ -13,7 +13,7 @@
 
 Built in 24 hours at the IIITDM Kancheepuram web development hackathon, HealthTech track: *Lost in Transit: Fragmented Medical Records and Repeated Care Across Providers*.
 
-![CareTrail landing page](docs/screenshots/landing.png)
+![CareTrail landing page](.github/readme/screenshots/landing.png)
 
 ## Contents
 
@@ -75,7 +75,7 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 
 ### 1. Add records: photo, PDF, several pages, or typed notes
 
-![Check what we read](docs/screenshots/check-screen.png)
+![Check what we read](.github/readme/screenshots/check-screen.png)
 
 - **Upload a photo or PDF** (up to 10 MB). Phone photos are shrunk on the phone first, so uploads are fast on mobile data.
 - **Several pages of one report** (several photos, or photos plus PDFs) are joined into one record, in order.
@@ -91,7 +91,7 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 
 ### 2. Home: what matters today
 
-![Home](docs/screenshots/home.png)
+![Home](.github/readme/screenshots/home.png)
 
 - **Medicine warnings** found across all doctors, serious ones first.
 - **Taking now:** current medicines and how many doctors prescribed them.
@@ -100,14 +100,14 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 - **Alerts:** a bell in the header counts new alerts and opens a panel with all of them (emergency scans and access, doctors' notes, records waiting for a check, medicine warnings). Home shows at most two, each with a close button.
 
 <p>
-  <img src="docs/screenshots/home-alerts-mobile.png" width="260" alt="Alerts on Home, phone">
+  <img src=".github/readme/screenshots/home-alerts-mobile.png" width="260" alt="Alerts on Home, phone">
   &nbsp;
-  <img src="docs/screenshots/alerts-panel-mobile.png" width="260" alt="Alert panel, phone">
+  <img src=".github/readme/screenshots/alerts-panel-mobile.png" width="260" alt="Alert panel, phone">
 </p>
 
 ### 3. Timeline and trends
 
-![HbA1c trend](docs/screenshots/trends.png)
+![HbA1c trend](.github/readme/screenshots/trends.png)
 
 - Every document becomes one **timeline**, newest first, filterable by condition (diabetes, blood pressure, thyroid, asthma, heart), type and date.
 - **Trends** for HbA1c, fasting sugar, blood pressure, TSH and LDL, against the normal band. Tap any point to open the report it came from.
@@ -115,7 +115,7 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 
 ### 4. Medicine safety across doctors
 
-![Medicine safety checks](docs/screenshots/medicines.png)
+![Medicine safety checks](.github/readme/screenshots/medicines.png)
 
 - **Duplicate therapy:** the same medicine under different brands from different doctors (e.g. Glycomet and Gluconorm are both metformin).
 - **Drug interactions** from the DDInter database, by severity (major in red, moderate and minor folded).
@@ -126,7 +126,7 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 
 ### 5. Sharing with a doctor, on the patient's terms
 
-<img src="docs/screenshots/sharing.png" width="560" alt="A share link with QR code and doctor code">
+<img src=".github/readme/screenshots/sharing.png" width="560" alt="A share link with QR code and doctor code">
 
 - The patient chooses **what** the doctor sees (some conditions, recent months, or everything) and **for how long** (1 hour, 24 hours, 7 days).
 - Optional **6-digit code** read out in person, so a forwarded link is useless.
@@ -136,22 +136,22 @@ Three surfaces, one design system: a warm, simple **patient app** (built for a 5
 
 ### 6. The doctor's view
 
-![Doctor's one-screen brief](docs/screenshots/doctor-brief.png)
+![Doctor's one-screen brief](.github/readme/screenshots/doctor-brief.png)
 
 - One screen: allergies, safety warnings, conditions, current medicines, key results with their trend, recent tests ("consider before re-ordering"), hospital stays and documents.
 - **Every fact opens its source:** the original document, with the exact words highlighted.
 
-![Source document with the line highlighted](docs/screenshots/doctor-source.png)
+![Source document with the line highlighted](.github/readme/screenshots/doctor-source.png)
 
 - **Since your last view:** a returning doctor (same name and registration number) sees only what changed since their last visit: new prescriptions, medicines started, changed or stopped, new results with the earlier value, new diagnoses and new warnings.
 
-![Since your last view](docs/screenshots/since-last-visit.png)
+![Since your last view](.github/readme/screenshots/since-last-visit.png)
 
 - **Doctor write-back:** if the patient allows it on that link, the doctor can leave a **note** or upload a **new prescription**. Notes appear on the patient's Home, Sharing page and alerts; prescriptions go through the same AI reading and wait for the patient's check, marked "Added by Dr. …".
 
 ### 7. Emergency card
 
-<img src="docs/screenshots/emergency-card.png" width="300" alt="Emergency card on a phone">
+<img src=".github/readme/screenshots/emergency-card.png" width="300" alt="Emergency card on a phone">
 
 - The patient creates an **emergency QR** once and saves it as a **lock-screen image** or prints a **wallet card**.
 - Anyone who scans it sees, **without logging in**, only the critical facts in large type: name, age, **blood group**, **allergies** (red band), current medicines, main conditions and a one-tap **Call** button for the emergency contact. No documents, lab history or doctors' names.
@@ -250,7 +250,6 @@ sequenceDiagram
 - Mobile first, checked at 360 and 390 px with no sideways scrolling; light and dark themes.
 - Warnings always use an icon and words, never colour alone. Red is only for serious warnings, amber only for "needs checking", green only for verified.
 - Type chosen for low-vision readers (Atkinson Hyperlegible). The emergency page keeps maximum contrast in every theme.
-- Design system: [`docs/DESIGN.md`](docs/DESIGN.md).
 
 ## Setup instructions
 
@@ -341,7 +340,6 @@ supabase/migrations/   schema, row-level security, triggers, reference data (55 
                        about 100 brands, 293 DDInter interaction pairs, test validity)
 scripts/               migrations, type generation, test account, sample document builder, browser tests
 demo-docs/             simulated prescriptions and lab reports (PDFs and phone-style photos)
-docs/                  design system, screenshots, logo
 ```
 
 ## Known limits and next steps
@@ -391,7 +389,7 @@ Everything below was used to build CareTrail. All sample records in `demo-docs/`
 | Playwright Core (dev, drives local Chrome) | Browser tests and screenshots |
 | axe-core via `@axe-core/playwright` (dev) | Accessibility audit |
 | ESLint (dev) | Linting |
-| Agent skills used during development: ui-ux-pro-max, design-taste-frontend, impeccable, ponytail, graphify (see `skills-lock.json`) | Design research, UI audits, code-size discipline, code graph |
+| Agent skills used during development: ui-ux-pro-max, design-taste-frontend, impeccable, ponytail, graphify | Design research, UI audits, code-size discipline, code graph |
 | Claude Code (Anthropic) | AI pair programmer used to write code |
 
 CareTrail is an information tool, not medical advice.
