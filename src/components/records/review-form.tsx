@@ -295,6 +295,10 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
                     <input id={`unit-${l.key}`} value={l.unit} onChange={(e) => updLab(l.key, { unit: e.target.value })} className={smallInput} />
                   </div>
                 </div>
+                <div>
+                  <label htmlFor={`range-${l.key}`} className={label}>Normal range <span className="font-normal">(as printed)</span></label>
+                  <input id={`range-${l.key}`} value={l.ref_range ?? ""} onChange={(e) => updLab(l.key, { ref_range: e.target.value })} placeholder="Not printed" className={cn(smallInput, "font-mono")} />
+                </div>
                 <Flag reasons={l.reasons} />
                 <Source text={l.source_text} />
               </li>

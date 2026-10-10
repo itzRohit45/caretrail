@@ -59,8 +59,14 @@ export function SavedFacts({
       {labs.length ? (
         <Group Icon={Flask} title="Test results">
           {labs.filter((l) => l.test_code !== "BP_DIA").map((l) => {
-            const r = l.test_code === "BP_SYS" ? undefined : rangeFor(l.test_code);
-            const v = l.value_normalised ?? l.value;
+            // The lab's own printed range first; CareTrail's standard adult range only when none was printed.
+            const own = l.ref_low !== null || l.ref_high !== null;
+            const std = l.test_code === "BP_SYS" || own ? undefined : rangeFor(l.test_code);
+            const line = own && l.value !== null
+              ? { value: l.value, low: l.ref_low, high: l.ref_high, unit: l.unit ?? undefined }
+              : std && l.value_normalised !== null
+                ? { value: l.value_normalised, low: std.low, high: std.high, unit: l.unit_normalised ?? undefined }
+                : null;
             return (
               <li key={l.id} className="grid gap-2 py-3.5 sm:grid-cols-[1fr_12rem] sm:items-center sm:gap-6">
                 <div>
@@ -72,8 +78,15 @@ export function SavedFacts({
                     <span className="font-serif text-lead font-medium text-ink tabular-nums">{l.test_code === "BP_SYS" ? l.value_text : (l.value ?? l.value_text)}</span> {l.unit}
                     <span className="text-meta"> on {formatDate(l.test_date)}</span>
                   </p>
+                  {l.ref_range_text ? (
+                    <p className="text-dense text-ink-2">Normal range on the report: <span className="font-semibold text-ink">{l.ref_range_text}</span></p>
+                  ) : std ? (
+                    <p className="text-dense text-ink-2">
+                      Usual adult range: {std.low !== null && std.high !== null ? `${std.low} to ${std.high}` : std.high !== null ? `below ${std.high}` : `above ${std.low}`} {l.unit_normalised}
+                    </p>
+                  ) : null}
                 </div>
-                {r && v !== null && l.value_normalised !== null ? <RangeLine value={v} low={r.low} high={r.high} unit={l.unit_normalised ?? undefined} /> : null}
+                {line ? <RangeLine value={line.value} low={line.low} high={line.high} unit={line.unit} /> : null}
               </li>
             );
           })}
