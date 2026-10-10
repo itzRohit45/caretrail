@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus, WarningOctagon, Warning, Pill, Receipt, QrCode, Siren, NotePencil } from "@phosphor-icons/react/ssr";
-import { formatDateTime } from "@/lib/format";
+import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus, WarningOctagon, Warning, Pill, Receipt, QrCode } from "@phosphor-icons/react/ssr";
 import { requirePatient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageBody, PageHeader, SheetSection } from "@/components/ui/page";
@@ -13,12 +12,13 @@ import { RangeLine } from "@/components/ui/range-line";
 import { loadTrends, type TrendPoint } from "@/lib/records/trends";
 import { formatDate } from "@/lib/format";
 import { loadMedicines, loadTestSaver } from "@/lib/safety/load";
+import { cookies } from "next/headers";
+import { DISMISS_COOKIE, loadAlerts, parseDismissed } from "@/lib/alerts";
+import { HomeAlerts } from "@/components/alerts/home-alerts";
 import { SAFETY_NOTE } from "@/lib/safety/engine";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = { title: "Home" };
-
-const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 
 function greeting() {
   const hour = Number(new Intl.DateTimeFormat("en-IN", { hour: "numeric", hourCycle: "h23", timeZone: "Asia/Kolkata" }).format(new Date()));
@@ -64,18 +64,10 @@ export default async function HomePage() {
     .filter((l) => l.test_date === newestDate && !["BP_SYS", "BP_DIA"].includes(l.test_code ?? "") && !shownCodes.has(l.test_code ?? ""))
     .sort((a, b) => Number(outside(b)) - Number(outside(a)))
     .slice(0, 3 - latest.length);
-  const { data: emergencyEvents } = await supabase
-    .from("access_logs")
-    .select("action, viewer_name, viewer_hospital, created_at")
-    .eq("patient_id", patient.id)
-    .in("action", ["emergency_scan", "break_glass"])
-    .gte("created_at", hoursAgo(24))
-    .order("created_at", { ascending: false })
-    .limit(20);
-  const scans = emergencyEvents?.filter((e) => e.action === "emergency_scan");
-  const breakGlass = emergencyEvents?.find((e) => e.action === "break_glass");
-  const { data: notes } = await supabase.from("doctor_notes").select("id, doctor_name, note, created_at").eq("patient_id", patient.id).order("created_at", { ascending: false }).limit(3);
-  const waiting = (docs ?? []).filter((d) => d.extraction_status === "needs_review" || d.extraction_status === "failed");
+  const alerts = await loadAlerts(supabase, patient.id, meds.warnings);
+  const dismissed = parseDismissed((await cookies()).get(DISMISS_COOKIE)?.value);
+  // The medicine card below already covers warnings; Home shows the other alerts the patient has not dismissed.
+  const homeAlerts = alerts.filter((a) => a.kind !== "meds" && !dismissed.has(a.id));
 
   const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
   const checks = [
@@ -101,27 +93,7 @@ export default async function HomePage() {
         }
       />
       <PageBody>
-        {breakGlass ? (
-          <Link href="/sharing" className="flex items-start gap-3 rounded-card border border-severe-rule bg-severe-soft p-4">
-            <WarningOctagon aria-hidden weight="fill" className="mt-0.5 size-6 shrink-0 text-severe" />
-            <span>
-              <span className="block font-bold text-severe">
-                Emergency full access opened by {breakGlass.viewer_name ?? "a clinician"}
-                {breakGlass.viewer_hospital ? `, ${breakGlass.viewer_hospital}` : ""} at {formatDateTime(breakGlass.created_at)}
-              </span>
-              <span className="block text-dense text-ink">It ends by itself after 2 hours. If this was not expected, end it now from Sharing.</span>
-            </span>
-          </Link>
-        ) : null}
-        {scans?.length ? (
-          <Link href="/sharing/history" className="flex items-start gap-3 rounded-card border border-rule-strong bg-sheet p-4">
-            <Siren aria-hidden weight="fill" className="mt-0.5 size-6 shrink-0" />
-            <span>
-              <span className="block font-bold">Your emergency card was scanned at {formatDateTime(scans[0].created_at)}</span>
-              <span className="block text-dense text-ink-2">If this was not expected, open your emergency card and make a new QR.</span>
-            </span>
-          </Link>
-        ) : null}
+        <HomeAlerts alerts={homeAlerts} />
         {urgent.length ? (
           <section aria-labelledby="warn-title" className={cn("rounded-card border p-5 sm:p-6", urgent.some((w) => w.level === "severe") ? "border-severe-rule bg-severe-soft" : "border-rule bg-sheet")}>
             <h2 id="warn-title" className="flex items-center gap-2 text-title font-bold">
@@ -129,12 +101,15 @@ export default async function HomePage() {
               {urgent.length === 1 ? "1 medicine warning" : `${urgent.length} medicine warnings`}
             </h2>
             <ul className="mt-3 space-y-1.5">
-              {urgent.slice(0, 3).map((w) => (
+              {/* Compact: the serious ones by name, the rest as a count. All are on the Medicines page. */}
+              {(urgent.some((w) => w.level === "severe") ? urgent.filter((w) => w.level === "severe") : urgent).slice(0, 2).map((w) => (
                 <li key={w.id} className={cn("font-semibold", w.level === "severe" ? "text-severe" : "text-ink")}>
                   {w.title}
                 </li>
               ))}
-              {urgent.length > 3 ? <li className="text-ink-2">and {urgent.length - 3} more</li> : null}
+              {urgent.length > Math.min(2, urgent.filter((w) => w.level === "severe").length || 2) ? (
+                <li className="text-ink-2">and {urgent.length - Math.min(2, urgent.filter((w) => w.level === "severe").length || 2)} more to discuss with your doctor</li>
+              ) : null}
             </ul>
             <p className="mt-3 text-dense text-ink-2">{SAFETY_NOTE}</p>
             <Link href="/medicines" className={buttonClass("secondary", "dense", "mt-4")}>
@@ -191,34 +166,6 @@ export default async function HomePage() {
               )}
             </section>
           </div>
-        ) : null}
-
-        {waiting.length ? (
-          <section aria-labelledby="waiting-title" className="rounded-card border border-verify-rule bg-verify-soft p-5 sm:p-6">
-            <h2 id="waiting-title" className="text-title font-bold text-ink">
-              {waiting.length === 1 ? "1 record needs your check" : `${waiting.length} records need your check`}
-            </h2>
-            <p className="mt-1 text-ink-2">Nothing is added to your record until you check it.</p>
-            <ul className="mt-3 divide-y divide-verify-rule">
-              {waiting.map((d) => (
-                <RecordRow key={d.id} doc={d} />
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        {notes?.length ? (
-          <section aria-labelledby="notes-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-6">
-            <h2 id="notes-title" className="flex items-center gap-2 text-title font-bold"><NotePencil aria-hidden className="size-6" /> Notes from your doctors</h2>
-            <ul className="mt-3 divide-y divide-rule">
-              {notes.map((n) => (
-                <li key={n.id} className="py-3">
-                  <p className="whitespace-pre-line">{n.note}</p>
-                  <p className="mt-1 text-dense text-ink-2">{n.doctor_name}, {formatDateTime(n.created_at)}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
         ) : null}
 
         {latest.length || extraLabs.length ? (

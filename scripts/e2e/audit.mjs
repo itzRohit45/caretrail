@@ -57,6 +57,14 @@ try {
       if (scheme === "dark" && ["home", "medicines", "trends"].includes(name)) await p.screenshot({ path: `${shots}/dark-${name}.png`, fullPage: true, caret: "initial" });
     }
     if (scheme === "light") {
+      await p.goto(`${BASE}/home`);
+      await p.getByRole("button", { name: /^Alerts/ }).click();
+      await p.getByRole("dialog", { name: "Alerts" }).waitFor();
+      await p.waitForTimeout(800);
+      await audit(p, "alerts-panel");
+      await p.keyboard.press("Escape");
+    }
+    if (scheme === "light") {
       await p.goto(`${BASE}/upload`);
       await p.getByRole("radio", { name: "Consultation notes" }).click();
       await p.getByRole("heading", { name: "Write the notes" }).waitFor();

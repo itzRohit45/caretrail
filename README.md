@@ -58,7 +58,7 @@ Create the test account (runs the real extraction pipeline on `demo-docs/ravi/`)
 
 **Google sign-in (optional):** in Google Cloud Console create an OAuth client (Web application) with the redirect URI `https://<project>.supabase.co/auth/v1/callback`; in Supabase, *Authentication > Sign In / Providers > Google*, paste the client ID and secret and enable it; in *Authentication > URL Configuration* add `https://<your-site>/auth/callback` to the redirect URLs. The *Continue with Google* button appears by itself once the provider is on.
 
-Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (51), browser tests in `scripts/e2e/` (`phase-a` to `phase-o`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
+Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (51), browser tests in `scripts/e2e/` (`phase-a` to `phase-p`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
 
 ## Try it
 
@@ -70,6 +70,7 @@ Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm te
 
 The account is shared, so other testers may add records or links too. Rebuild it any time with `npm run seed:test-account`. Or create your own account (email, or *Continue with Google* once it is enabled in Supabase).
 
+- **Alerts:** the bell in the header counts new alerts (emergency scans and full access, doctors' notes, records to check, medicine warnings) and opens a panel with all of them; Home shows at most two, each with a close button.
 - **Home:** medicine warnings across doctors (penicillin allergy clash, metformin prescribed twice, an interaction), Taking now, Tests still valid with a rupee estimate, Latest results with each lab's printed range.
 - **Add a record:** upload a photo or PDF; several photos of one report become one record; or choose *Consultation notes* and just type what the doctor said (a photo is optional). Try `demo-docs/fresh/ravi-live-upload-rx-oct-2026.jpg` (in the repo): the check screen shows how often and for how many days, worked out from the quantity written on the paper.
 - **Medicines:** courses whose written days have passed move to *Finished courses* by themselves.

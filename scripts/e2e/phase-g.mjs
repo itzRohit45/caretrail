@@ -65,7 +65,7 @@ try {
   const { data: logs } = await admin.from("access_logs").select("action").eq("patient_id", patient.id).eq("action", "emergency_scan");
   check("scan written to the access log", (logs?.length ?? 0) >= 1);
   await page.goto(`${BASE}/home`);
-  check("patient is told about the scan on Home", await seen(page.getByText(/Your emergency card was scanned at/)));
+  check("patient is told about the scan on Home", await seen(page.getByText(/Your emergency card was scanned/)));
 
   await admin.from("allergies").delete().eq("id", allergy.id);
   await er.reload();

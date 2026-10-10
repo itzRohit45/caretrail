@@ -4,6 +4,7 @@ import { Wordmark } from "@/components/wordmark";
 import { HeaderTabs, BottomTabs } from "@/components/patient/nav";
 import { logout } from "@/app/(auth)/actions";
 import { LiveViewerPill } from "@/components/sharing/live-viewer-pill";
+import { AlertsBell } from "@/components/alerts/alerts-bell";
 import { buttonClass } from "@/components/ui/button";
 
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
@@ -18,8 +19,9 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             <Wordmark />
           </Link>
           <HeaderTabs />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <LiveViewerPill />
+            <AlertsBell />
             <form action={logout}>
               <button type="submit" className={buttonClass("quiet", "dense")}>
                 <SignOut aria-hidden className="size-5" />
