@@ -87,7 +87,7 @@ function PdfPages({ url }: { url: string }) {
         const el = holder.current;
         if (!el || cancelled) return;
         el.replaceChildren();
-        for (let n = 1; n <= Math.min(pdf.numPages, 5); n++) {
+        for (let n = 1; n <= Math.min(pdf.numPages, 10); n++) {
           const page = await pdf.getPage(n);
           const viewport = page.getViewport({ scale: 2 });
           const canvas = document.createElement("canvas");

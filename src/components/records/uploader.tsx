@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, FilePlus, FileText, ImageSquare, CheckCircle, CircleNotch, ArrowCounterClockwise, X } from "@phosphor-icons/react";
+import { Camera, FilePlus, FileText, ImageSquare, CheckCircle, CircleNotch, ArrowCounterClockwise, X, Plus } from "@phosphor-icons/react";
 import { buttonClass } from "@/components/ui/button";
 import { ACCEPTED_TYPES, DOC_TYPES, DOC_TYPE_LABELS, MAX_UPLOAD_BYTES } from "@/lib/schemas/documents";
 import { cn } from "@/lib/cn";
-import { putWithProgress, sha256 } from "@/lib/upload-client";
+import { combinePages, putWithProgress, sha256, shrinkPhoto } from "@/lib/upload-client";
 
 type DocType = (typeof DOC_TYPES)[number];
 type Phase =
@@ -18,35 +18,51 @@ type Phase =
   | { name: "error"; message: string; retry?: boolean; duplicateId?: string };
 
 const mb = (n: number) => `${(n / 1048576).toFixed(1)} MB`;
+const MAX_PAGES = 10;
+// Photos are shrunk on the phone before upload, so a large original photo is fine; PDFs are sent as they are.
+const MAX_PHOTO_BYTES = 30 * 1048576;
 
 export function Uploader() {
   const router = useRouter();
   const [type, setType] = useState<DocType | null>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [phase, setPhase] = useState<Phase>({ name: "pick" });
   const camera = useRef<HTMLInputElement>(null);
   const picker = useRef<HTMLInputElement>(null);
 
-  function choose(f: File | undefined) {
-    if (!f) return;
-    if (!(ACCEPTED_TYPES as readonly string[]).includes(f.type)) {
-      setFile(null);
-      setPhase({ name: "error", message: `"${f.name}" is not a PDF, JPG or PNG. Please choose one of those.` });
-      return;
+  /** Adds pages: several photos of one report, or a PDF. They are kept together as one record. */
+  function choose(list: FileList | null) {
+    const picked = [...(list ?? [])];
+    if (!picked.length) return;
+    for (const f of picked) {
+      if (!(ACCEPTED_TYPES as readonly string[]).includes(f.type)) {
+        return setPhase({ name: "error", message: `"${f.name}" is not a PDF, JPG or PNG. Please choose one of those.` });
+      }
+      const limit = f.type === "application/pdf" ? MAX_UPLOAD_BYTES : MAX_PHOTO_BYTES;
+      if (f.size > limit) {
+        return setPhase({ name: "error", message: `This file is ${mb(f.size)}. Files can be up to 10 MB. Try a smaller PDF or a photo.` });
+      }
     }
-    if (f.size > MAX_UPLOAD_BYTES) {
-      setFile(null);
-      setPhase({ name: "error", message: `This file is ${mb(f.size)}. Files can be up to 10 MB. Try a smaller photo or a PDF.` });
-      return;
+    if (files.length + picked.length > MAX_PAGES) {
+      return setPhase({ name: "error", message: `One record can have up to ${MAX_PAGES} pages. Upload the rest as a second record.` });
     }
-    setFile(f);
+    setFiles((current) => [...current, ...picked]);
     setPhase({ name: "pick" });
   }
 
   async function upload() {
-    if (!file || !type) return;
+    if (!files.length || !type) return;
     try {
       setPhase({ name: "hashing" });
+      let file: File;
+      try {
+        file = files.length === 1 ? await shrinkPhoto(files[0]) : await combinePages(files, `${DOC_TYPE_LABELS[type]} (${files.length} pages).pdf`);
+      } catch {
+        return setPhase({ name: "error", message: "One of the files could not be opened. A protected PDF or an unusual photo format can cause this; try a photo instead." });
+      }
+      if (file.size > MAX_UPLOAD_BYTES) {
+        return setPhase({ name: "error", message: `Together these pages are ${mb(file.size)}. Files can be up to 10 MB. Remove a page, or upload them as two records.` });
+      }
       const file_hash = await sha256(file);
       const res = await fetch("/api/documents", {
         method: "POST",
@@ -81,7 +97,7 @@ export function Uploader() {
 
   if (busy) {
     const steps = [
-      { label: "Checking the file", done: phase.name !== "hashing" },
+      { label: files.length > 1 ? `Putting ${files.length} pages together` : "Preparing the file", done: phase.name !== "hashing" },
       { label: phase.name === "uploading" ? `Uploading, ${phase.percent}%` : "Uploading", done: phase.name === "reading" },
       { label: "Reading your document", done: false },
     ];
@@ -140,23 +156,40 @@ export function Uploader() {
 
       <section aria-labelledby="file-title" className="rounded-card border border-rule bg-sheet p-5 sm:p-7">
         <h2 id="file-title" className="text-title font-bold">Add the file</h2>
-        <p className="mt-1 text-ink-2">A clear photo or a PDF. Up to 10 MB.</p>
-        <input ref={camera} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => choose(e.target.files?.[0])} />
-        <input ref={picker} type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => choose(e.target.files?.[0])} />
+        <p className="mt-1 text-ink-2">A clear photo or a PDF. Several pages? Add a photo of each page; they stay together as one record.</p>
+        <input ref={camera} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => { choose(e.target.files); e.target.value = ""; }} />
+        <input ref={picker} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => { choose(e.target.files); e.target.value = ""; }} />
 
-        {file ? (
-          <div className="mt-5 flex items-center gap-4 rounded-control border border-rule bg-sheet-sunk p-4">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-control bg-sheet text-primary">
-              {file.type === "application/pdf" ? <FileText aria-hidden className="size-7" /> : <ImageSquare aria-hidden className="size-7" />}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{file.name}</p>
-              <p className="text-dense text-ink-2">{mb(file.size)}</p>
-            </div>
-            <button type="button" onClick={() => setFile(null)} className={buttonClass("quiet", "dense")} aria-label="Remove this file">
-              <X aria-hidden className="size-5" />
-            </button>
-          </div>
+        {files.length ? (
+          <>
+            {files.length > 1 ? <p className="mt-5 font-semibold">{files.length} pages, uploaded as one record in this order</p> : null}
+            <ol className={cn("space-y-2", files.length > 1 ? "mt-2" : "mt-5")}>
+              {files.map((f, i) => (
+                <li key={`${f.name}-${f.size}-${i}`} className="flex items-center gap-3 rounded-control border border-rule bg-sheet-sunk p-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-control bg-sheet text-primary">
+                    {f.type === "application/pdf" ? <FileText aria-hidden className="size-6" /> : <ImageSquare aria-hidden className="size-6" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{files.length > 1 ? `Page ${i + 1}: ` : ""}{f.name}</p>
+                    <p className="text-dense text-ink-2">{mb(f.size)}</p>
+                  </div>
+                  <button type="button" onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} className={buttonClass("quiet", "dense")} aria-label={`Remove ${f.name}`}>
+                    <X aria-hidden className="size-5" />
+                  </button>
+                </li>
+              ))}
+            </ol>
+            {files.length < MAX_PAGES ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => camera.current?.click()} className={buttonClass("secondary", "dense")}>
+                  <Camera aria-hidden className="size-5" /> Photo of next page
+                </button>
+                <button type="button" onClick={() => picker.current?.click()} className={buttonClass("secondary", "dense")}>
+                  <Plus aria-hidden className="size-5" /> Add more files
+                </button>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <button type="button" onClick={() => camera.current?.click()} className={buttonClass("secondary", "patient", "min-h-16 justify-start rounded-control")}>
@@ -165,7 +198,7 @@ export function Uploader() {
             </button>
             <button type="button" onClick={() => picker.current?.click()} className={buttonClass("secondary", "patient", "min-h-16 justify-start rounded-control")}>
               <FilePlus aria-hidden weight="duotone" className="size-7 text-primary" />
-              Choose a file
+              Choose files
             </button>
           </div>
         )}
@@ -180,7 +213,7 @@ export function Uploader() {
                 Open it
               </Link>
             ) : null}
-            {phase.retry && file && type ? (
+            {phase.retry && files.length && type ? (
               <button type="button" onClick={upload} className={buttonClass("secondary", "dense")}>
                 <ArrowCounterClockwise aria-hidden className="size-5" />
                 Try again
@@ -191,10 +224,10 @@ export function Uploader() {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button type="button" onClick={upload} disabled={!file || !type} className={buttonClass("primary")}>
+        <button type="button" onClick={upload} disabled={!files.length || !type} className={buttonClass("primary")}>
           Upload record
         </button>
-        {!type || !file ? <p className="text-ink-2">{!type ? "Choose what it is first." : "Then add the file."}</p> : null}
+        {!type || !files.length ? <p className="text-ink-2">{!type ? "Choose what it is first." : "Then add the file."}</p> : null}
       </div>
     </div>
   );

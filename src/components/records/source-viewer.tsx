@@ -54,7 +54,7 @@ function PdfWithHighlight({ url, quote }: { url: string; quote: string | null })
         el.replaceChildren();
         const target = quote ? norm(quote) : null;
         let firstHit: HTMLElement | null = null;
-        for (let n = 1; n <= Math.min(pdf.numPages, 6); n++) {
+        for (let n = 1; n <= Math.min(pdf.numPages, 10); n++) {
           const page = await pdf.getPage(n);
           const viewport = page.getViewport({ scale: 2 });
           const wrap = document.createElement("div");

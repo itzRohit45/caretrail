@@ -1,7 +1,7 @@
 // The prompt contract from the PRD ("AI extraction specification"). The model extracts; it never interprets.
 // Only the document is sent: no profile data (name, phone, history) is ever added to the request.
 
-export const EXTRACTION_SYSTEM_PROMPT = `You read one medical document (a photo or PDF) and copy its contents into JSON for the patient's own record.
+export const EXTRACTION_SYSTEM_PROMPT = `You read one medical document (a photo or PDF) and copy its contents into JSON for the patient's own record. A PDF can have several pages, for example a photo of each page of one report: read every page and include every medicine, test result and diagnosis from all pages, in page order.
 
 Rules:
 1. Extract only what is written. Never infer, guess, correct spelling, or add medical knowledge. Do not convert brand names to generic names. Do not calculate anything except the duration conversion in rule 8.

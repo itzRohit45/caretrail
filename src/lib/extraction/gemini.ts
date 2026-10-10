@@ -12,7 +12,7 @@ export class ModelError extends Error {
 }
 
 /** One generateContent call. Returns the raw JSON text the model produced. */
-export async function callGemini(model: string, file: { data: Buffer; mimeType: string }, timeoutMs: number) {
+export async function callGemini(model: string, file: { data: Buffer; mimeType: string }, timeoutMs: number, cancel?: AbortSignal) {
   const key = serverEnv().GEMINI_API_KEY;
   if (!key) throw new ModelError("unavailable");
   let res: Response;
@@ -25,7 +25,7 @@ export async function callGemini(model: string, file: { data: Buffer; mimeType: 
         contents: [{ role: "user", parts: [{ inline_data: { mime_type: file.mimeType, data: file.data.toString("base64") } }, { text: EXTRACTION_USER_PROMPT }] }],
         generationConfig: { responseMimeType: "application/json", responseSchema: geminiResponseSchema, temperature: 0 },
       }),
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: cancel ? AbortSignal.any([AbortSignal.timeout(timeoutMs), cancel]) : AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
     throw new ModelError(err instanceof DOMException && err.name === "TimeoutError" ? "timeout" : "unavailable");

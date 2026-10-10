@@ -25,7 +25,7 @@ Every requirement in the PRD's Must and Should lists, plus the FHIR export stret
 | PRD | Feature | Test |
 |---|---|---|
 | FR-01 | Sign up, log in, profile, allergies, emergency contact | `phase-a` |
-| FR-02, FR-03, FR-04 | Upload (10 MB, PDF/JPG/PNG, duplicate block), AI extraction with confidence and source text, verify screen beside the original, normalisation (brands to generics, units, dosing shorthand) | `phase-b` |
+| FR-02, FR-03, FR-04 | Upload (10 MB, PDF/JPG/PNG, duplicate block; several photos or PDFs of one report become one multi-page record; phone photos are shrunk on the device), AI extraction with confidence and source text, verify screen beside the original, normalisation (brands to generics, units, dosing shorthand) | `phase-b`, `phase-m` |
 | FR-05 | Timeline with condition, type and date filters; lab trends with normal ranges | `phase-c` |
 | FR-06, FR-07 | Safety checks across doctors (duplicates, interactions, allergy clashes); Test Saver | `phase-d` |
 | FR-08, FR-09, FR-10 | Scoped, expiring share links (QR, optional code, revoke reaches the doctor within 5 s), access history and live "viewing now", source-linked doctor brief | `phase-ef` |
@@ -55,7 +55,7 @@ npm run dev
 
 Seed the demo patients (runs the real extraction pipeline on `demo-docs/`): `npm run seed`.
 
-Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (43), browser tests in `scripts/e2e/` (`phase-a` to `phase-l`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
+Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (43), browser tests in `scripts/e2e/` (`phase-a` to `phase-m`, plus `mobile-shots.mjs` for 360/390 px captures with an overflow check; need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
 
 ## Try it
 
@@ -87,6 +87,7 @@ Everything below was used to build CareTrail. No real patient data is used anywh
 | Recharts | Lab trend charts |
 | qrcode.react | Share and emergency QR codes |
 | pdf.js (`pdfjs-dist`) | PDF rendering and source-text highlighting |
+| pdf-lib | Combines several photos or PDFs of one report into one PDF, in the browser |
 | Phosphor Icons (`@phosphor-icons/react`) | Icons |
 | `server-only` | Keeps server secrets out of client bundles |
 | Google Gemini API (`gemini-3.5-flash-lite`, fallback `gemini-3.6-flash`) | Document extraction (vision). Free tier; only simulated documents are sent. Model order chosen from a head-to-head test on the demo documents. |
