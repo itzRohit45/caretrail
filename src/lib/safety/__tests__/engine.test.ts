@@ -71,6 +71,25 @@ describe("safetyWarnings", () => {
     expect(w[0]).toMatchObject({ kind: "interaction", level: "caution", severity: "moderate" });
   });
 
+  it("reports one warning per pair of medicines, at the worst severity of their ingredients", () => {
+    const groups = consolidate([
+      med({ brand_name: "Asthalin", generics: ["salbutamol"] }),
+      med({ brand_name: "Foracort 200", generics: ["budesonide", "formoterol"] }),
+    ]);
+    const w = safetyWarnings({
+      groups,
+      allergies: [],
+      interactions: [
+        { generic_a: "formoterol", generic_b: "salbutamol", severity: "moderate" },
+        { generic_a: "budesonide", generic_b: "salbutamol", severity: "minor" },
+      ],
+      classes,
+    });
+    expect(w).toHaveLength(1);
+    expect(w[0]).toMatchObject({ severity: "moderate", level: "caution" });
+    expect(w[0].detail).toContain("budesonide and salbutamol (minor)");
+  });
+
   it("orders severe before caution before info", () => {
     const groups = consolidate([
       med({ brand_name: "A", generics: ["aspirin"] }),

@@ -4,6 +4,8 @@ import { FileMagnifyingGlass, Pill, HandPalm } from "@phosphor-icons/react/ssr";
 import { Wordmark } from "@/components/wordmark";
 import { buttonClass } from "@/components/ui/button";
 import { SampleBrief, SampleLabCard, SampleViewingPill, SampleWarningCard } from "@/components/marketing/samples";
+import { DemoPanel } from "@/components/demo/demo-panel";
+import { Alert } from "@/components/ui/alert";
 import portrait from "../../public/images/patient-portrait.jpg";
 
 const features = [
@@ -24,7 +26,8 @@ const features = [
   },
 ];
 
-export default function Landing() {
+export default async function Landing({ searchParams }: PageProps<"/">) {
+  const { demo } = await searchParams;
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="mx-auto flex h-18 w-full max-w-6xl items-center justify-between px-5 sm:px-6">
@@ -51,11 +54,11 @@ export default function Landing() {
               CareTrail reads your prescriptions and lab reports, catches medicine mix-ups across doctors, and shares only what you choose.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/signup" className={buttonClass("primary")}>
+              <a href="#demo" className={buttonClass("primary")}>
+                Try the demo
+              </a>
+              <Link href="/signup" className={buttonClass("secondary")}>
                 Create free account
-              </Link>
-              <Link href="/login" className={buttonClass("secondary")}>
-                Log in
               </Link>
             </div>
           </div>
@@ -73,6 +76,23 @@ export default function Landing() {
               Sample record with simulated names. Photo by Wilfred Sequeira on Unsplash.
             </figcaption>
           </figure>
+        </section>
+
+        <section id="demo" aria-labelledby="demo-title" className="scroll-mt-6 border-t border-rule">
+          <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 lg:py-20">
+            <h2 id="demo-title" className="font-serif text-display font-medium md:text-headline">
+              Try it with a <em className="italic">sample patient</em>
+            </h2>
+            <p className="mt-3 max-w-[56ch] text-lead text-ink-2">Every record was read from simulated prescriptions and lab reports by the same pipeline you would use. No sign-up needed.</p>
+            {demo ? (
+              <Alert tone="info" title={demo === "busy" ? "Many demos started from your network" : "The demo could not start"} className="mt-6 max-w-xl" role="status">
+                {demo === "busy" ? "Please wait a few minutes and try again, or create a free account." : "Please try again in a moment."}
+              </Alert>
+            ) : null}
+            <div className="mt-8">
+              <DemoPanel />
+            </div>
+          </div>
         </section>
 
         <section aria-labelledby="how-title" className="border-t border-rule bg-sheet">

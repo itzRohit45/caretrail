@@ -103,33 +103,37 @@ export function safetyWarnings(input: { groups: MedGroup[]; allergies: SafetyAll
     });
   }
 
-  // 3. Interactions between every pair of recognised medicines.
+  // 3. Interactions: one warning per pair of medicines, at the most severe level among their ingredients
+  //    (a combination such as budesonide + formoterol can interact through more than one ingredient).
   const pairIndex = new Map(interactions.map((i) => [`${i.generic_a}|${i.generic_b}`, i.severity]));
+  const severityRank = { major: 3, moderate: 2, minor: 1 } as const;
   const recognised = current.filter((m) => m.recognised);
-  const seen = new Set<string>();
   for (let i = 0; i < recognised.length; i++) {
     for (let j = i + 1; j < recognised.length; j++) {
       const a = recognised[i];
       const b = recognised[j];
+      const hits: { x: string; y: string; severity: SafetyInteraction["severity"] }[] = [];
       for (const ga of a.generics) {
         for (const gb of b.generics) {
           if (ga === gb) continue;
           const [x, y] = [ga, gb].sort();
           const severity = pairIndex.get(`${x}|${y}`);
-          const key = `${x}|${y}`;
-          if (!severity || seen.has(key)) continue;
-          seen.add(key);
-          warnings.push({
-            id: `interaction:${key}`,
-            kind: "interaction",
-            level: severity === "major" ? "severe" : severity === "moderate" ? "caution" : "info",
-            severity,
-            title: `${cap(severity)} interaction: ${a.brand_name} and ${b.brand_name}`,
-            detail: `${cap(x)} and ${y} are listed as a ${severity} interaction. ${by(a)}; ${by(b)}.`,
-            items: [item(a), item(b)],
-          });
+          if (severity) hits.push({ x, y, severity });
         }
       }
+      if (!hits.length) continue;
+      const worst = hits.reduce((w, h) => (severityRank[h.severity] > severityRank[w.severity] ? h : w));
+      const severity = worst.severity;
+      const pairs = hits.map((h) => `${h.x} and ${h.y} (${h.severity})`).join("; ");
+      warnings.push({
+        id: `interaction:${[a.id, b.id].sort().join("|")}`,
+        kind: "interaction",
+        level: severity === "major" ? "severe" : severity === "moderate" ? "caution" : "info",
+        severity,
+        title: `${cap(severity)} interaction: ${a.brand_name} and ${b.brand_name}`,
+        detail: `${hits.length === 1 ? `${cap(worst.x)} and ${worst.y} are listed as a ${severity} interaction.` : `Listed interactions: ${pairs}.`} ${by(a)}; ${by(b)}.`,
+        items: [item(a), item(b)],
+      });
     }
   }
 

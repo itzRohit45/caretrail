@@ -116,6 +116,14 @@ export default async function HomePage() {
               <p className="flex items-center gap-2 font-bold"><Pill aria-hidden weight="duotone" className="size-5 text-primary" /> Taking now</p>
               <p className="mt-2 font-serif text-display font-medium tabular-nums">{meds.groups.length}</p>
               <p className="text-ink-2">{meds.groups.length === 1 ? "medicine" : "medicines"}{doctors ? ` from ${doctors} ${doctors === 1 ? "doctor" : "doctors"}` : ""}</p>
+              {meds.groups.length ? (
+                <ul className="mt-3 flex flex-wrap gap-1.5">
+                  {meds.groups.slice(0, 6).map((g) => (
+                    <li key={g.key} className="rounded-pill bg-sheet-sunk px-2.5 py-1 text-dense font-semibold">{g.current.brand_name}</li>
+                  ))}
+                  {meds.groups.length > 6 ? <li className="px-1 py-1 text-dense text-ink-2">+{meds.groups.length - 6} more</li> : null}
+                </ul>
+              ) : null}
             </Link>
             <section aria-labelledby="saver-title" className="rounded-card border border-rule bg-sheet p-5">
               <h2 id="saver-title" className="flex items-center gap-2 font-bold"><Receipt aria-hidden weight="duotone" className="size-5 text-primary" /> Tests still valid</h2>

@@ -14,6 +14,7 @@ const serverEnvSchema = z.object({
   BREVO_API_KEY: optional,
   ALERT_FROM_EMAIL: optional,
   IP_HASH_SALT: z.string().min(32),
+  DEMO_EMERGENCY_TOKEN: optional,
   NEXT_PUBLIC_APP_URL: z.url(),
 });
 

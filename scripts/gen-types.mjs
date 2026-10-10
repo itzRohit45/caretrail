@@ -74,6 +74,7 @@ out += `    };
     Functions: {
       rate_limit_hit: { Args: { p_key: string; p_limit: number; p_window_seconds: number }; Returns: boolean };
       owns_patient: { Args: { pid: string }; Returns: boolean };
+      clone_demo_patient: { Args: { p_template: string; p_owner: string }; Returns: string };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

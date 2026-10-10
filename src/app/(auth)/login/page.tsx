@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LoginForm } from "@/components/auth/auth-forms";
 import { Alert } from "@/components/ui/alert";
 import { safeNext } from "@/lib/schemas/auth";
+import { DemoPanel } from "@/components/demo/demo-panel";
 
 export const metadata: Metadata = { title: "Log in" };
 
@@ -29,6 +30,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           Create an account
         </Link>
       </p>
+      <section aria-labelledby="demo-login-title" className="border-t border-rule pt-6">
+        <h2 id="demo-login-title" className="mb-3 text-lead font-bold">Or try a sample patient</h2>
+        <DemoPanel compact />
+      </section>
     </div>
   );
 }

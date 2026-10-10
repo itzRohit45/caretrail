@@ -30,7 +30,23 @@ npm run gen-types                 # regenerates src/lib/db/types.ts from the liv
 npm run dev
 ```
 
-Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test`, browser smoke tests `node --env-file=.env.local scripts/e2e/phase-a.mjs` (needs the dev server and Google Chrome).
+Seed the demo patients (runs the real extraction pipeline on `demo-docs/`): `npm run seed`.
+
+Checks: `npm run typecheck && npm run lint && npm run build`, unit tests `npm test` (31), browser tests in `scripts/e2e/` (`phase-a` to `phase-h`, need the dev server and Google Chrome), e.g. `node --env-file=.env.local scripts/e2e/phase-ef.mjs`.
+
+## Try it
+
+- **Try demo:** on the landing or login page, choose *Try as Ravi*, *Lakshmi* or *Arun*. You get a private copy of a simulated patient (no sign-up).
+- **Doctor's view:** *Open a doctor's view* mints a real 1-hour link to Ravi's record.
+- **Emergency card:** *Open an emergency card* shows Arun's tier 1 card.
+
+### How the demo data was made
+Twenty-four simulated documents (fictional Chennai clinics, labs and patients) were rendered as PDFs and phone-style photos (`scripts/demo-docs/build.mjs`, output in `demo-docs/`), then run through the same upload, AI extraction, normalisation and safety pipeline the app uses (`npm run seed`). Every field was saved exactly as the model read it; nothing was typed by hand. One fresh prescription (`demo-docs/fresh/`) is kept aside for a live upload.
+
+### Known limits
+- The extraction model reports high confidence even on handwriting, so routing relies on the PRD rule that every medicine dose is checked by the patient.
+- Interaction checks cover the medicines in the DDInter dataset; gliclazide, vildagliptin, teneligliptin, voglibose and cilnidipine are recognised but not covered.
+- Demo copies created by *Try demo* are not cleaned up automatically yet.
 
 ## Disclosures
 
