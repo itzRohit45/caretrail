@@ -3,7 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { ageFrom } from "@/lib/format";
 import { consolidate, type SafetyMed } from "@/lib/safety/engine";
 import { decodeFrequency } from "@/lib/normalise/frequency";
-import { CONDITION_LABELS } from "@/lib/normalise/conditions";
+import { CONDITION_LABELS, preferredConditionName } from "@/lib/normalise/conditions";
 import type { Row } from "@/lib/db/types";
 
 export type EmergencyCard = {
@@ -29,8 +29,10 @@ export async function buildEmergencyCard(patient: Row<"patients">): Promise<Emer
   ]);
   const groups = consolidate((meds.data ?? []) as SafetyMed[]);
   const conditions = MAJOR.flatMap((cat) => {
-    const names = (conds.data ?? []).filter((c) => c.category === cat).map((c) => c.name).sort((a, b) => b.length - a.length);
-    return names.length ? [`${CONDITION_LABELS[cat]}${names[0].length > 4 ? ` (${names[0]})` : ""}`] : [];
+    const names = (conds.data ?? []).filter((c) => c.category === cat).map((c) => c.name);
+    if (!names.length) return [];
+    const best = preferredConditionName(cat, names);
+    return [`${CONDITION_LABELS[cat]}${best.length > 4 ? ` (${best})` : ""}`];
   });
   return {
     name: patient.name,

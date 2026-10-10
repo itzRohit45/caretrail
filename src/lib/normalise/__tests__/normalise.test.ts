@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildBrandIndex, cleanBrand, matchBrand } from "../brands";
 import { decodeFrequency } from "../frequency";
 import { normaliseValue, parseRange, splitBloodPressure, testCode, parseNumber } from "../labs";
-import { conditionCategory } from "../conditions";
+import { conditionCategory, preferredConditionName } from "../conditions";
 import { toIsoDate } from "../dates";
 
 const index = buildBrandIndex(
@@ -88,6 +88,10 @@ describe("conditions and dates", () => {
     expect(conditionCategory("NSTEMI s/p PCI to LAD")).toBe("cardiac");
     expect(conditionCategory("Bronchial asthma")).toBe("asthma");
     expect(conditionCategory("Fracture")).toBe("other");
+  });
+  it("names a chronic condition by its diagnosis, not an episode", () => {
+    expect(preferredConditionName("diabetes", ["Hypoglycaemia secondary to poor oral intake", "Type 2 diabetes mellitus", "T2DM"])).toBe("Type 2 diabetes mellitus");
+    expect(preferredConditionName("cardiac", ["Acute NSTEMI", "Coronary artery disease, single vessel (LAD)"])).toBe("Coronary artery disease, single vessel (LAD)");
   });
   it("parses written dates and rejects future or impossible ones", () => {
     expect(toIsoDate("14/08/2026", "2026-10-10")).toBe("2026-08-14");

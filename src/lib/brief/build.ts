@@ -3,7 +3,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { ageFrom, todayIST } from "@/lib/format";
 import { decodeFrequency } from "@/lib/normalise/frequency";
 import { categoriesFor } from "@/lib/normalise/brands";
-import { CONDITION_LABELS } from "@/lib/normalise/conditions";
+import { CONDITION_LABELS, preferredConditionName } from "@/lib/normalise/conditions";
 import { consolidate, safetyWarnings, type SafetyMed, type SafetyWarning } from "@/lib/safety/engine";
 import { recentTests, type RecentTest } from "@/lib/safety/test-saver";
 import { describeScope, documentInScope, factInScope, labCategories, scopeFromLink } from "@/lib/sharing/scope";
@@ -91,7 +91,9 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
   const conditions = CHRONIC.flatMap((cat) => {
     const rows = conds.filter((c) => c.category === cat).sort((a, b) => (a.diagnosed_on ?? "").localeCompare(b.diagnosed_on ?? ""));
     if (!rows.length) return [];
-    const names = [...new Set(rows.map((r) => r.name))].sort((a, b) => b.length - a.length);
+    const unique = [...new Set(rows.map((r) => r.name))];
+    const best = preferredConditionName(cat, unique);
+    const names = [best, ...unique.filter((n) => n !== best)];
     return [{ label: CONDITION_LABELS[cat], names, since: rows[0].diagnosed_on, verified_by_patient: rows.some((r) => r.verified_by_patient), sources: rows.map((r) => source(r.source_document_id, r.source_text)) }];
   });
 

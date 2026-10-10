@@ -75,6 +75,7 @@ Everything below was used to build CareTrail. No real patient data is used anywh
 | Vitest (dev) | Unit tests |
 | tsx (dev) | Runs TypeScript scripts (seeding, extraction checks) |
 | Playwright Core (dev, drives local Chrome) | Browser smoke tests and screenshots |
+| axe-core via `@axe-core/playwright` (dev) | WCAG 2.1 AA accessibility audit (`scripts/e2e/audit.mjs`) |
 | ESLint (dev) | Linting |
 | Agent skills used during development: ui-ux-pro-max, design-taste-frontend, impeccable, ponytail, graphify (see `skills-lock.json`) | Design system research, UI audits, code-size discipline, code graph |
 | Claude Code (Anthropic) | AI pair programmer used to write code |
