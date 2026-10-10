@@ -5,6 +5,8 @@ import { serverEnv } from "@/lib/env";
 export async function sendEmail(to: string, subject: string, text: string) {
   const env = serverEnv();
   if (!env.BREVO_API_KEY || !env.ALERT_FROM_EMAIL) return false;
+  // Demo accounts use the reserved example.com domain, which can never receive mail.
+  if (/@example\.(com|org|net)$/i.test(to)) return false;
   try {
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",

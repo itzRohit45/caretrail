@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Prohibit, FileText, WarningOctagon, Warning, Info, ArrowUpRight, ArrowDownRight, ArrowRight, Clock, X, CircleNotch, Eye, LockKey, UserCheck } from "@phosphor-icons/react";
+import { Prohibit, FileText, WarningOctagon, Warning, Info, ArrowUpRight, ArrowDownRight, ArrowRight, Clock, X, CircleNotch, Eye, LockKey, UserCheck, Siren } from "@phosphor-icons/react";
 import type { Brief, Source } from "@/lib/brief/build";
 import { Wordmark } from "@/components/wordmark";
 import { buttonClass } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { inputClass } from "@/components/ui/field";
 import { SourceViewer } from "@/components/records/source-viewer";
 import { cn } from "@/lib/cn";
 
-type Loaded = Brief & { viewer: string };
+type Loaded = Brief & { viewer: string; break_glass: boolean };
 type Phase =
   | { name: "checking" }
   | { name: "ended" }
@@ -205,7 +205,8 @@ export function DoctorView() {
 
   return (
     <div className="min-h-dvh text-dense">
-      <header className="sticky top-0 z-20 border-b border-rule bg-sheet">
+      {/* Sticky only where there is room: on a phone four wrapped header rows would eat a fifth of the screen. */}
+      <header className="border-b border-rule bg-sheet md:sticky md:top-0 md:z-20">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <div className="flex min-w-0 items-baseline gap-3">
             <h1 className="font-serif text-title font-medium">{b.patient.name}</h1>
@@ -218,6 +219,12 @@ export function DoctorView() {
         </div>
       </header>
 
+      {b.break_glass ? (
+        <p role="note" className="mx-auto mt-4 flex max-w-7xl items-start gap-2 px-4 font-semibold text-severe">
+          <Siren aria-hidden weight="fill" className="mt-0.5 size-5 shrink-0" />
+          Emergency full access. Your name, hospital and registration number are recorded, and the patient and their emergency contact have been alerted.
+        </p>
+      ) : null}
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-3">
         <div className="space-y-4">
           <section aria-label="Allergies" className={cn("rounded-card border p-4", b.allergies.length ? "border-severe-rule bg-severe-soft" : "border-rule bg-sheet")}>
@@ -241,7 +248,7 @@ export function DoctorView() {
               <p className="px-2 text-ink-2">None among the shared medicines.</p>
             ) : (
               <ul className="space-y-2">
-                {[...severe, ...caution].map((w) => (
+                {[...severe, ...caution.slice(0, 3)].map((w) => (
                   <li key={w.id} className={cn("rounded-control p-2.5", w.level === "severe" ? "bg-severe-soft" : "bg-sheet-sunk")}>
                     <p className={cn("flex items-start gap-1.5 font-bold", w.level === "severe" && "text-severe")}>
                       {w.level === "severe" ? <WarningOctagon aria-hidden weight="fill" className="mt-0.5 size-4 shrink-0" /> : <Warning aria-hidden weight="fill" className="mt-0.5 size-4 shrink-0" />}
@@ -250,6 +257,25 @@ export function DoctorView() {
                     <p className="mt-0.5 text-ink-2">{w.detail}</p>
                   </li>
                 ))}
+                {/* Severe ones always show in full; a long tail of moderate ones folds so the brief stays one screen. */}
+                {caution.length > 3 ? (
+                  <li>
+                    <details className="group rounded-control bg-sheet-sunk p-2.5">
+                      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 font-bold">
+                        <Warning aria-hidden weight="fill" className="size-4 shrink-0" /> {caution.length - 3} more moderate warnings
+                        <span className="ml-auto font-semibold text-primary group-open:hidden">Show</span>
+                      </summary>
+                      <ul className="mt-1 divide-y divide-rule">
+                        {caution.slice(3).map((w) => (
+                          <li key={w.id} className="py-2">
+                            <p className="font-semibold">{w.title}</p>
+                            <p className="text-ink-2">{w.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </li>
+                ) : null}
                 {minor.length ? <li className="flex items-center gap-1.5 px-2 text-ink-2"><Info aria-hidden className="size-4" /> {minor.length} minor interaction{minor.length > 1 ? "s" : ""}</li> : null}
               </ul>
             )}

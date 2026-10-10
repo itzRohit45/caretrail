@@ -42,7 +42,7 @@ export async function GET() {
   const { supabase, patient } = session;
   const [links, logs, live] = await Promise.all([
     supabase.from("share_links").select("id, label, scope_type, scope_conditions, scope_months, expires_at, revoked_at, require_otp, otp_code, is_break_glass, created_at").eq("patient_id", patient.id).order("created_at", { ascending: false }),
-    supabase.from("access_logs").select("share_link_id, action").eq("patient_id", patient.id).eq("action", "opened"),
+    supabase.from("access_logs").select("share_link_id, action").eq("patient_id", patient.id).in("action", ["opened", "break_glass"]),
     supabase.from("viewer_sessions").select("share_link_id, viewer_name, last_seen_at").eq("patient_id", patient.id).gte("last_seen_at", new Date(Date.now() - LIVE_MS).toISOString()),
   ]);
   if (links.error) return fail(500, "Your links could not load.");

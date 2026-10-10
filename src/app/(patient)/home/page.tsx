@@ -46,14 +46,16 @@ export default async function HomePage() {
     .filter((t) => t.key !== "BP" && t.points.length > 0)
     .map((t) => ({ trend: t, point: t.points.at(-1) as TrendPoint }))
     .slice(0, 3);
-  const { data: scans } = await supabase
+  const { data: emergencyEvents } = await supabase
     .from("access_logs")
-    .select("created_at")
+    .select("action, viewer_name, viewer_hospital, created_at")
     .eq("patient_id", patient.id)
-    .eq("action", "emergency_scan")
+    .in("action", ["emergency_scan", "break_glass"])
     .gte("created_at", hoursAgo(24))
     .order("created_at", { ascending: false })
-    .limit(1);
+    .limit(20);
+  const scans = emergencyEvents?.filter((e) => e.action === "emergency_scan");
+  const breakGlass = emergencyEvents?.find((e) => e.action === "break_glass");
   const waiting = (docs ?? []).filter((d) => d.extraction_status === "needs_review" || d.extraction_status === "failed");
 
   const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
@@ -80,6 +82,18 @@ export default async function HomePage() {
         }
       />
       <PageBody>
+        {breakGlass ? (
+          <Link href="/sharing" className="flex items-start gap-3 rounded-card border border-severe-rule bg-severe-soft p-4">
+            <WarningOctagon aria-hidden weight="fill" className="mt-0.5 size-6 shrink-0 text-severe" />
+            <span>
+              <span className="block font-bold text-severe">
+                Emergency full access opened by {breakGlass.viewer_name ?? "a clinician"}
+                {breakGlass.viewer_hospital ? `, ${breakGlass.viewer_hospital}` : ""} at {formatDateTime(breakGlass.created_at)}
+              </span>
+              <span className="block text-dense text-ink">It ends by itself after 2 hours. If this was not expected, end it now from Sharing.</span>
+            </span>
+          </Link>
+        ) : null}
         {scans?.length ? (
           <Link href="/sharing/history" className="flex items-start gap-3 rounded-card border border-rule-strong bg-sheet p-4">
             <Siren aria-hidden weight="fill" className="mt-0.5 size-6 shrink-0" />

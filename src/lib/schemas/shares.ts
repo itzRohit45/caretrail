@@ -19,3 +19,15 @@ export const openShareSchema = z.object({
   viewer_name: z.string().trim().min(2, "Enter your name.").max(80),
   otp: z.preprocess((v) => (v === "" ? undefined : v), z.string().regex(/^\d{6}$/, "Enter the 6-digit code.").optional()),
 });
+
+/** Tier 2 emergency request: who is asking, from where, and their medical registration number. */
+export const breakGlassSchema = z.object({
+  viewer_name: z.string({ error: "Enter your name." }).trim().min(2, "Enter your name.").max(80),
+  hospital: z.string({ error: "Enter the hospital or ambulance service." }).trim().min(2, "Enter the hospital or ambulance service.").max(120),
+  reg_no: z
+    .string({ error: "Enter your medical registration number." })
+    .trim()
+    .min(3, "Enter your medical registration number.")
+    .max(40)
+    .regex(/^[A-Za-z0-9][A-Za-z0-9 ./-]*$/, "Use letters, numbers, spaces, dots, slashes or dashes."),
+});

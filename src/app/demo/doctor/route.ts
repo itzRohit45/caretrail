@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { allowRequest } from "@/lib/sharing/request";
 import { hashToken, newToken } from "@/lib/sharing/tokens";
-import { tooMany } from "@/lib/api/respond";
 
 /** Sample doctor's view: mints a real 1-hour link to the seeded Ravi record, exactly as a patient would. */
 export async function GET(request: Request) {
-  if (!(await allowRequest(request, "demo-doctor", 20, 3600))) return tooMany();
+  // Judges often share one venue IP, so the hourly cap is generous; a page visit gets a page, not JSON.
+  if (!(await allowRequest(request, "demo-doctor", 60, 3600))) return NextResponse.redirect(new URL("/?demo=busy", request.url));
   const admin = adminClient();
   const { data: ravi } = await admin.from("patients").select("id").eq("is_demo_template", true).eq("name", "Ravi Kumar").maybeSingle();
   if (!ravi) return NextResponse.redirect(new URL("/?demo=unavailable", request.url));

@@ -222,9 +222,12 @@ export function ShareManager() {
         ) : (
           <ul className="space-y-3">
             {active.map((l) => (
-              <li key={l.id} className="rounded-card border border-rule bg-sheet p-4 sm:p-5">
+              <li key={l.id} className={cn("rounded-card border p-4 sm:p-5", l.is_break_glass ? "border-severe-rule bg-severe-soft" : "border-rule bg-sheet")}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
+                    {l.is_break_glass ? (
+                      <p className="flex items-center gap-1.5 font-bold text-severe"><WarningOctagon aria-hidden weight="fill" className="size-5" /> Emergency full access</p>
+                    ) : null}
                     <p className="text-lead font-bold">{l.label ?? "Shared records"}</p>
                     <p className="text-ink-2">{describeScope({ type: l.scope_type, conditions: l.scope_conditions, months: l.scope_months })}</p>
                   </div>

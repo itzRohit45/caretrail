@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Phone, WarningOctagon, FirstAid, ShieldCheck, Pill, Heartbeat, CircleNotch } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { Phone, WarningOctagon, FirstAid, ShieldCheck, Pill, Heartbeat, CircleNotch, LockKeyOpen } from "@phosphor-icons/react";
 import type { EmergencyCard } from "@/lib/emergency/card";
+import { cn } from "@/lib/cn";
 
 const telHref = (phone: string) => `tel:${phone.replace(/[^+\d]/g, "")}`;
 const cap = (s: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 
 /** Tier 1 emergency page: maximum contrast, critical facts above the fold, tap to call. */
 export function EmergencyView() {
-  const [state, setState] = useState<{ name: "loading" } | { name: "invalid" } | { name: "limited" } | { name: "ready"; card: EmergencyCard }>({ name: "loading" });
+  const [state, setState] = useState<{ name: "loading" } | { name: "invalid" } | { name: "limited" } | { name: "ready"; card: EmergencyCard; token: string }>({ name: "loading" });
 
   useEffect(() => {
     const token = window.location.hash.slice(1);
@@ -18,7 +20,7 @@ export function EmergencyView() {
       const res = await fetch("/api/e", { headers: { "x-emergency-token": token } }).catch(() => null);
       if (res?.status === 429) return setState({ name: "limited" });
       if (!res?.ok) return setState({ name: "invalid" });
-      setState({ name: "ready", card: (await res.json()).data });
+      setState({ name: "ready", card: (await res.json()).data, token });
     })();
   }, []);
 
@@ -46,13 +48,13 @@ export function EmergencyView() {
           <h1 className="text-display font-bold">Please try again in a minute</h1>
         </main>
       ) : (
-        <Card card={state.card} />
+        <Card card={state.card} token={state.token} />
       )}
     </div>
   );
 }
 
-function Card({ card }: { card: EmergencyCard }) {
+function Card({ card, token }: { card: EmergencyCard; token: string }) {
   return (
     <main className="mx-auto max-w-2xl">
       <section className="flex items-start justify-between gap-4 px-5 pt-5 pb-4">
@@ -126,9 +128,93 @@ function Card({ card }: { card: EmergencyCard }) {
         )}
       </section>
 
+      <BreakGlass token={token} contactName={card.contact.name} />
+
       <footer className="px-5 pt-2 pb-10 text-dense text-ink-2">
         This is the patient&apos;s own record, shared through CareTrail. It shows critical information only. Each scan is recorded and the patient is told.
       </footer>
     </main>
+  );
+}
+
+const fieldClass = "mt-1 block min-h-13 w-full rounded-control border-2 border-ink-3 bg-sheet px-4 text-lead text-ink aria-invalid:border-severe";
+
+/** Tier 2 (FR-12): a clinician names themselves to open the full record for 2 hours. Logged and alerted. */
+function BreakGlass({ token, contactName }: { token: string; contactName: string | null }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fields, setFields] = useState<Record<string, string>>({});
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    setError(null);
+    setFields({});
+    const res = await fetch("/api/e/break-glass", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-emergency-token": token },
+      body: JSON.stringify({ viewer_name: form.get("viewer_name"), hospital: form.get("hospital"), reg_no: form.get("reg_no") }),
+    }).catch(() => null);
+    const body = await res?.json().catch(() => null);
+    if (!res?.ok || !body?.data) {
+      setBusy(false);
+      if (res?.status === 422) {
+        // First message per field: "Enter your registration number" beats "Use letters, numbers..." for an empty box.
+        const first: Record<string, string> = {};
+        for (const f of (body?.error?.fields ?? []) as { path: string; message: string }[]) first[f.path] ??= f.message;
+        return setFields(first);
+      }
+      return setError(
+        res?.status === 429 ? "Too many requests from this network. Try again in a few minutes."
+        : res?.status === 410 ? "This emergency card is no longer valid."
+        : "The full record could not open. Check the connection and try again.",
+      );
+    }
+    // The doctor view picks up this session, so the clinician does not type their name twice.
+    sessionStorage.setItem("ct-viewer", `${body.data.token.slice(0, 10)}:${body.data.session_id}`);
+    router.push(`/s#${body.data.token}`);
+  }
+
+  const err = (name: string) =>
+    fields[name] ? <p id={`${name}-error`} className="mt-1 font-bold text-severe">{fields[name]}</p> : null;
+
+  return (
+    <section aria-labelledby="bg-title" className="border-t-2 border-ink px-5 py-5">
+      <h2 id="bg-title" className="flex items-center gap-2 text-title font-bold"><LockKeyOpen aria-hidden className="size-6" /> Need the full record?</h2>
+      <p className="mt-1 text-ink-2">
+        Clinicians can open the complete record for 2 hours. Your name, hospital and registration number are recorded, and the patient and {contactName ?? "their emergency contact"} are alerted at once.
+      </p>
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)} className="mt-4 flex min-h-14 w-full items-center justify-center rounded-card border-2 border-ink px-5 text-lead font-bold active:scale-[0.98]">
+          Request full record
+        </button>
+      ) : (
+        <form onSubmit={submit} noValidate className="mt-4 space-y-4">
+          <div>
+            <label htmlFor="bg-name" className="text-lead font-bold">Your name</label>
+            <input id="bg-name" name="viewer_name" autoComplete="name" required aria-invalid={Boolean(fields.viewer_name)} aria-describedby={fields.viewer_name ? "viewer_name-error" : undefined} className={fieldClass} />
+            {err("viewer_name")}
+          </div>
+          <div>
+            <label htmlFor="bg-hospital" className="text-lead font-bold">Hospital or ambulance service</label>
+            <input id="bg-hospital" name="hospital" autoComplete="organization" required aria-invalid={Boolean(fields.hospital)} aria-describedby={fields.hospital ? "hospital-error" : undefined} className={fieldClass} />
+            {err("hospital")}
+          </div>
+          <div>
+            <label htmlFor="bg-reg" className="text-lead font-bold">Medical registration number</label>
+            <input id="bg-reg" name="reg_no" autoCapitalize="characters" required aria-invalid={Boolean(fields.reg_no)} aria-describedby={fields.reg_no ? "reg_no-error" : undefined} className={cn(fieldClass, "font-mono")} />
+            {err("reg_no")}
+          </div>
+          {error ? <p role="alert" className="font-bold text-severe">{error}</p> : null}
+          <button type="submit" disabled={busy} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-card bg-ink px-5 text-lead font-bold text-sheet active:scale-[0.98] disabled:opacity-70">
+            {busy ? <CircleNotch aria-hidden weight="bold" className="size-6 animate-spin" /> : <LockKeyOpen aria-hidden weight="fill" className="size-6" />}
+            Open full record for 2 hours
+          </button>
+        </form>
+      )}
+    </section>
   );
 }

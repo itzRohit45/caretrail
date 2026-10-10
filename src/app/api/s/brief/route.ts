@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if ("response" in res) return res.response;
   try {
     const brief = await buildBrief(res.ctx.link, res.ctx.patient);
-    return ok({ ...brief, viewer: res.ctx.session.viewer_name });
+    return ok({ ...brief, viewer: res.ctx.session.viewer_name, break_glass: res.ctx.link.is_break_glass });
   } catch {
     return fail(500, "The records could not load. Please refresh.");
   }

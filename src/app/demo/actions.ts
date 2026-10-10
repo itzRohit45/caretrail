@@ -13,7 +13,7 @@ export async function startDemo(form: FormData) {
   const key = String(form.get("patient")) as DemoKey;
   const persona = DEMO_PATIENTS[key];
   if (!persona) redirect("/?demo=unknown");
-  if (!(await allowRequest(await headers(), "demo", 10, 3600))) redirect("/?demo=busy");
+  if (!(await allowRequest(await headers(), "demo", 60, 3600))) redirect("/?demo=busy");
 
   const admin = adminClient();
   const { data: template } = await admin.from("patients").select("id").eq("is_demo_template", true).eq("name", persona.name).maybeSingle();
