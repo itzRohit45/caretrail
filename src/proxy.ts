@@ -49,6 +49,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // API routes answer 401/410 themselves; static assets never need a session.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|ico|txt|pdf)$).*)"],
+  // API routes answer 401/410 themselves. Anything that looks like a file (has an extension) is a public
+  // asset and never needs a session; the pdf.js worker (.mjs) broke for doctors when only some extensions were listed.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.[a-zA-Z0-9]+$).*)"],
 };

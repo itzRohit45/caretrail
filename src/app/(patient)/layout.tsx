@@ -3,6 +3,7 @@ import { SignOut } from "@phosphor-icons/react/ssr";
 import { Wordmark } from "@/components/wordmark";
 import { HeaderTabs, BottomTabs } from "@/components/patient/nav";
 import { logout } from "@/app/(auth)/actions";
+import { LiveViewerPill } from "@/components/sharing/live-viewer-pill";
 import { buttonClass } from "@/components/ui/button";
 
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
@@ -17,12 +18,16 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             <Wordmark />
           </Link>
           <HeaderTabs />
-          <form action={logout}>
-            <button type="submit" className={buttonClass("quiet", "dense")}>
-              <SignOut aria-hidden className="size-5" />
-              Log out
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            <LiveViewerPill />
+            <form action={logout}>
+              <button type="submit" className={buttonClass("quiet", "dense")}>
+                <SignOut aria-hidden className="size-5" />
+                <span className="hidden sm:inline">Log out</span>
+                <span className="sr-only sm:hidden">Log out</span>
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main id="main">{children}</main>
