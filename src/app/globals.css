@@ -29,6 +29,10 @@
   --chart-1: #2f5fc4;
   --chart-2: #c2417f;
   --shadow-tint: 40 34 24;
+  /* Logo colours: the same in every theme, so the mark never changes. */
+  --brand-mark: #1d2f6f;
+  --brand-mark-light: #9db0f2;
+  --brand-mark-white: #fffefc;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -106,6 +110,9 @@
   --color-verified-rule: var(--verified-rule);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
+  --color-brand-mark: var(--brand-mark);
+  --color-brand-mark-light: var(--brand-mark-light);
+  --color-brand-mark-white: var(--brand-mark-white);
   --color-transparent: transparent;
   --color-current: currentColor;
 
