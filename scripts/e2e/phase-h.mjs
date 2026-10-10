@@ -62,7 +62,7 @@ try {
   await d.getByLabel("Your name").fill("Dr. Judge");
   await d.getByRole("button", { name: "Open records" }).click();
   check("sample doctor's view opens Ravi's brief", await seen(d.getByRole("heading", { name: "Ravi Kumar" })));
-  check("doctor sees the severe allergy clash", await seen(d.getByText(/may clash with your Penicillin allergy/)));
+  check("doctor sees the severe allergy clash", await seen(d.getByText(/may clash with the patient's Penicillin allergy/)));
   await d.screenshot({ path: `${shots}/demo-doctor-desktop.png`, fullPage: true, caret: "initial" });
   const e = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true })).newPage();
   await e.goto(`${BASE}/demo/emergency`);

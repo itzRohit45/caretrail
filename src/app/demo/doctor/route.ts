@@ -19,5 +19,5 @@ export async function GET(request: Request) {
     expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   });
   if (error) return NextResponse.redirect(new URL("/?demo=unavailable", request.url));
-  return NextResponse.redirect(new URL(`/s#${token}`, request.url), { headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
+  return NextResponse.redirect(new URL(`/s?sample=1#${token}`, request.url), { headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
 }

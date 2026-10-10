@@ -2,6 +2,7 @@ import { after } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { allowRequest, ipHash } from "@/lib/sharing/request";
 import { hashToken, isTokenShape, newToken } from "@/lib/sharing/tokens";
+import { previousVisit } from "@/lib/sharing/resolve";
 import { breakGlassSchema } from "@/lib/schemas/shares";
 import { sendEmail } from "@/lib/email";
 import { formatDateTime } from "@/lib/format";
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
 
   const { data: session, error: sessionError } = await admin
     .from("viewer_sessions")
-    .insert({ share_link_id: link.id, patient_id: patient.id, viewer_name })
+    .insert({ share_link_id: link.id, patient_id: patient.id, viewer_name, viewer_reg_no: reg_no, previous_visit_at: await previousVisit(patient, viewer_name, reg_no) })
     .select("id")
     .single();
   if (sessionError) return fail(500, "Could not open the full record. Please try again.");

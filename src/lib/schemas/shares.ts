@@ -15,8 +15,14 @@ export const createShareSchema = z
   .refine((s) => s.scope_type !== "conditions" || s.scope_conditions.length > 0, { message: "Choose at least one condition.", path: ["scope_conditions"] })
   .refine((s) => s.scope_type !== "months" || s.scope_months !== null, { message: "Choose how many months.", path: ["scope_months"] });
 
+const REG_NO = /^[A-Za-z0-9][A-Za-z0-9 ./-]*$/;
+
 export const openShareSchema = z.object({
   viewer_name: z.string().trim().min(2, "Enter your name.").max(80),
+  reg_no: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().trim().min(3, "Check the registration number.").max(40).regex(REG_NO, "Use letters, numbers, spaces, dots, slashes or dashes.").optional(),
+  ),
   otp: z.preprocess((v) => (v === "" ? undefined : v), z.string().regex(/^\d{6}$/, "Enter the 6-digit code.").optional()),
 });
 
@@ -29,5 +35,5 @@ export const breakGlassSchema = z.object({
     .trim()
     .min(3, "Enter your medical registration number.")
     .max(40)
-    .regex(/^[A-Za-z0-9][A-Za-z0-9 ./-]*$/, "Use letters, numbers, spaces, dots, slashes or dashes."),
+    .regex(REG_NO, "Use letters, numbers, spaces, dots, slashes or dashes."),
 });

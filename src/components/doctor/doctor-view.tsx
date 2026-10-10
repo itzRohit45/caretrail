@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Prohibit, FileText, WarningOctagon, Warning, Info, ArrowUpRight, ArrowDownRight, ArrowRight, Clock, X, CircleNotch, Eye, LockKey, UserCheck, Siren } from "@phosphor-icons/react";
-import type { Brief, Source } from "@/lib/brief/build";
+import type { Brief, SinceLastVisit, Source } from "@/lib/brief/build";
 import { Wordmark } from "@/components/wordmark";
 import { buttonClass } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
@@ -21,6 +21,10 @@ type Opened = { id: string; quote: string | null; title: string } | null;
 
 const SHORT: Record<string, string> = { prescription: "Rx", lab_report: "Lab", discharge_summary: "Discharge", scan_report: "Scan", other: "Doc" };
 const day = (iso: string) => new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(`${iso}T00:00:00+05:30`));
+const dayOf = (iso: string) => new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(iso));
+// The sample doctor link (landing page) is pre-filled as Ravi's diabetologist, who last viewed on 20 Aug.
+const SAMPLE_DOCTOR = { name: "Dr. A. Suresh", reg: "TNMC 61234" };
+const isSample = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("sample") === "1";
 const cap = (s: string | null) => (s ? s.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
 
 function countdown(iso: string, now: number) {
@@ -70,6 +74,26 @@ function Fact({ source, onOpen, title, children }: { source: Source; onOpen: (o:
   );
 }
 
+function Allergies({ allergies }: { allergies: Brief["allergies"] }) {
+  return (
+    <section aria-label="Allergies" className={cn("rounded-card border p-4", allergies.length ? "border-severe-rule bg-severe-soft" : "border-rule bg-sheet")}>
+      <h2 className={cn("mb-1 flex items-center gap-2 font-bold", allergies.length > 0 && "text-severe")}>
+        {allergies.length ? <WarningOctagon aria-hidden weight="fill" className="size-5" /> : null} Allergies
+      </h2>
+      {allergies.length ? (
+        <ul className="space-y-0.5">
+          {allergies.map((a) => (
+            <li key={a.substance}><span className="font-bold">{a.substance}</span> ({a.severity}){a.reaction ? `, ${a.reaction}` : ""}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>No known allergies recorded.</p>
+      )}
+      <p className="mt-1 text-meta text-ink-2">Entered by the patient.</p>
+    </section>
+  );
+}
+
 function Panel({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
   return (
     <section aria-label={title} className="rounded-card border border-rule bg-sheet p-4">
@@ -84,7 +108,9 @@ function Panel({ title, count, children }: { title: string; count?: number; chil
 
 export function DoctorView() {
   const [phase, setPhase] = useState<Phase>({ name: "checking" });
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => (isSample() ? SAMPLE_DOCTOR.name : ""));
+  const [regNo, setRegNo] = useState(() => (isSample() ? SAMPLE_DOCTOR.reg : ""));
+  const [tab, setTab] = useState<"since" | "brief">("since");
   const [otp, setOtp] = useState("");
   const [now, setNow] = useState(() => Date.now());
   const [opened, setOpened] = useState<Opened>(null);
@@ -147,7 +173,7 @@ export function DoctorView() {
     e.preventDefault();
     if (phase.name !== "gate") return;
     setPhase({ ...phase, busy: true, error: undefined });
-    const res = await fetch("/api/s/open", { method: "POST", headers: { "content-type": "application/json", "x-share-token": token.current }, body: JSON.stringify({ viewer_name: name, otp }) }).catch(() => null);
+    const res = await fetch("/api/s/open", { method: "POST", headers: { "content-type": "application/json", "x-share-token": token.current }, body: JSON.stringify({ viewer_name: name, reg_no: regNo, otp }) }).catch(() => null);
     if (!res || res.status === 410) return end();
     const body = await res.json().catch(() => ({}));
     if (!res.ok) return setPhase({ ...phase, busy: false, error: body.error?.fields?.[0]?.message ?? body.error?.message ?? "Could not open the records." });
@@ -182,6 +208,16 @@ export function DoctorView() {
             <label htmlFor="viewer" className="mb-1 block font-semibold">Your name</label>
             <input id="viewer" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required className={inputClass} />
           </div>
+          <div>
+            <label htmlFor="reg" className="mb-1 block font-semibold">Registration number <span className="font-normal text-ink-3">(optional)</span></label>
+            <p id="reg-help" className="mb-2 text-dense text-ink-2">Add it to see what changed since you last viewed this patient.</p>
+            <input id="reg" value={regNo} onChange={(e) => setRegNo(e.target.value)} autoCapitalize="characters" aria-describedby="reg-help" className={cn(inputClass, "font-mono")} />
+          </div>
+          {isSample() ? (
+            <p className="rounded-control bg-primary-soft px-3 py-2 text-dense text-primary">
+              Sample link: filled in as Ravi&apos;s diabetologist, who last viewed this record on 20 Aug 2026. Change the name to see the record as a new doctor.
+            </p>
+          ) : null}
           {phase.requireOtp ? (
             <div>
               <label htmlFor="code" className="mb-1 block font-semibold">Code from the patient</label>
@@ -202,6 +238,9 @@ export function DoctorView() {
   const severe = b.warnings.filter((w) => w.level === "severe");
   const caution = b.warnings.filter((w) => w.level === "caution");
   const minor = b.warnings.filter((w) => w.level === "info");
+  const since = b.since_last_visit;
+  const changes = since ? since.warnings.length + since.started.length + since.changed.length + since.stopped.length + since.labs.length + since.diagnoses.length + since.documents.length : 0;
+  const view = since && changes > 0 ? tab : "brief";
 
   return (
     <div className="min-h-dvh text-dense">
@@ -225,23 +264,26 @@ export function DoctorView() {
           Emergency full access. Your name, hospital and registration number are recorded, and the patient and their emergency contact have been alerted.
         </p>
       ) : null}
+      {since && changes === 0 ? (
+        <p className="mx-auto mt-4 max-w-7xl px-4 text-ink-2">Nothing new is dated after your last view on <span className="font-semibold text-ink">{dayOf(since.at)}</span>.</p>
+      ) : null}
+      {since && changes > 0 ? (
+        <div className="mx-auto mt-4 flex max-w-7xl flex-wrap gap-2 px-4" aria-label="Brief views">
+          <button type="button" aria-pressed={view === "since"} onClick={() => setTab("since")} className={cn("inline-flex min-h-11 items-center gap-2 rounded-pill border px-4 font-semibold", view === "since" ? "border-primary bg-primary text-on-primary" : "border-rule-strong bg-sheet text-ink hover:border-ink")}>
+            Since your last view, {dayOf(since.at)}
+            <span className={cn("rounded-pill px-2 text-meta font-bold tabular-nums", view === "since" ? "bg-sheet text-primary" : "bg-primary-soft text-primary")}>{changes}</span>
+          </button>
+          <button type="button" aria-pressed={view === "brief"} onClick={() => setTab("brief")} className={cn("inline-flex min-h-11 items-center rounded-pill border px-4 font-semibold", view === "brief" ? "border-primary bg-primary text-on-primary" : "border-rule-strong bg-sheet text-ink hover:border-ink")}>
+            Full brief
+          </button>
+        </div>
+      ) : null}
+      {since && view === "since" ? (
+        <SinceView since={since} allergies={b.allergies} onOpen={setOpened} />
+      ) : (
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-3">
         <div className="space-y-4">
-          <section aria-label="Allergies" className={cn("rounded-card border p-4", b.allergies.length ? "border-severe-rule bg-severe-soft" : "border-rule bg-sheet")}>
-            <h2 className={cn("mb-1 flex items-center gap-2 font-bold", b.allergies.length > 0 && "text-severe")}>
-              {b.allergies.length ? <WarningOctagon aria-hidden weight="fill" className="size-5" /> : null} Allergies
-            </h2>
-            {b.allergies.length ? (
-              <ul className="space-y-0.5">
-                {b.allergies.map((a) => (
-                  <li key={a.substance}><span className="font-bold">{a.substance}</span> ({a.severity}){a.reaction ? `, ${a.reaction}` : ""}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>No known allergies recorded.</p>
-            )}
-            <p className="mt-1 text-meta text-ink-2">Entered by the patient.</p>
-          </section>
+          <Allergies allergies={b.allergies} />
 
           <Panel title="Safety warnings" count={b.warnings.length}>
             {b.warnings.length === 0 ? (
@@ -382,12 +424,118 @@ export function DoctorView() {
           </Panel>
         </div>
       </main>
+      )}
       <footer className="mx-auto max-w-7xl px-4 pb-6 text-meta text-ink-3">
         Built only from the patient&apos;s stored records. Every line opens its source document. CareTrail is an information tool, not medical advice.
       </footer>
 
       {opened ? <SourceDialog opened={opened} headers={headers} onClose={() => setOpened(null)} onEnded={end} /> : null}
     </div>
+  );
+}
+
+/** FR-13: only what is dated after this doctor's previous view. Allergies stay on top. */
+function SinceView({ since, allergies, onOpen }: { since: SinceLastVisit; allergies: Brief["allergies"]; onOpen: (o: Opened) => void }) {
+  const medCount = since.started.length + since.changed.length + since.stopped.length;
+  return (
+    <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-3">
+      <p className="text-ink-2 lg:col-span-3">
+        Dated after your last view on <span className="font-semibold text-ink">{dayOf(since.at)}</span>. Everything else is under Full brief.
+      </p>
+      <div className="space-y-4">
+        <Allergies allergies={allergies} />
+        <Panel title="New warnings" count={since.warnings.length}>
+          {since.warnings.length ? (
+            <ul className="space-y-2">
+              {since.warnings.map((w) => (
+                <li key={w.id} className={cn("rounded-control p-2.5", w.level === "severe" ? "bg-severe-soft" : "bg-sheet-sunk")}>
+                  <p className={cn("flex items-start gap-1.5 font-bold", w.level === "severe" && "text-severe")}>
+                    {w.level === "severe" ? <WarningOctagon aria-hidden weight="fill" className="mt-0.5 size-4 shrink-0" /> : <Warning aria-hidden weight="fill" className="mt-0.5 size-4 shrink-0" />}
+                    {w.title}
+                  </p>
+                  <p className="mt-0.5 text-ink-2">{w.detail}</p>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="px-2 text-ink-2">No new warnings.</p>}
+        </Panel>
+      </div>
+
+      <Panel title="Medicine changes" count={medCount}>
+        {medCount ? (
+          <ul className="divide-y divide-rule">
+            {since.started.map((m) => (
+              <Fact key={`s-${m.brand}`} source={m.source} onOpen={onOpen} title={`${m.brand} started`}>
+                <span className="block"><span className="font-semibold">Started {m.brand}</span>{m.generic ? <span className="text-ink-2"> ({m.generic})</span> : null}</span>
+                <span className="block text-ink-2">{m.detail || "Dose not written"}</span>
+                <span className="block text-meta text-ink-3">{m.prescriber ?? "Prescriber unknown"}, {day(m.date)}</span>
+              </Fact>
+            ))}
+            {since.changed.map((m) => (
+              <Fact key={`c-${m.brand}`} source={m.source} onOpen={onOpen} title={`${m.brand} changed`}>
+                <span className="block font-semibold">Changed {m.brand}</span>
+                <span className="block text-ink-2">{m.from} <ArrowRight aria-label="to" className="inline size-4" /> {m.to}</span>
+                <span className="block text-meta text-ink-3">{m.prescriber ?? "Prescriber unknown"}, {day(m.date)}</span>
+              </Fact>
+            ))}
+            {since.stopped.map((m) => (
+              <Fact key={`x-${m.brand}`} source={m.source} onOpen={onOpen} title={`${m.brand} stopped`}>
+                <span className="block"><span className="font-semibold">Stopped {m.brand}</span>{m.generic ? <span className="text-ink-2"> ({m.generic})</span> : null}</span>
+                <span className="block text-meta text-ink-3">Marked stopped by the patient, {day(m.stopped_on)}</span>
+              </Fact>
+            ))}
+          </ul>
+        ) : <p className="px-2 text-ink-2">No medicine changes.</p>}
+      </Panel>
+
+      <div className="space-y-4">
+        <Panel title="New results" count={since.labs.length}>
+          {since.labs.length ? (
+            <ul className="divide-y divide-rule">
+              {since.labs.map((l) => (
+                <Fact key={l.code} source={l.source} onOpen={onOpen} title={l.title}>
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="font-semibold">{l.title}</span>
+                    <span className="font-mono font-bold tabular-nums">{l.display} <span className="font-sans font-normal text-ink-2">{l.unit}</span></span>
+                  </span>
+                  <span className="flex flex-wrap gap-x-2 text-ink-2">
+                    {day(l.date)}
+                    {l.out_of_range ? <span className="font-semibold text-ink">outside normal range</span> : null}
+                    {l.previous ? <span>was {l.previous.display} ({day(l.previous.date)})</span> : <span>first result</span>}
+                  </span>
+                </Fact>
+              ))}
+            </ul>
+          ) : <p className="px-2 text-ink-2">No new results.</p>}
+        </Panel>
+        <Panel title="New diagnoses" count={since.diagnoses.length}>
+          {since.diagnoses.length ? (
+            <ul className="divide-y divide-rule">
+              {since.diagnoses.map((d) => (
+                <Fact key={d.name} source={d.source} onOpen={onOpen} title={d.name}>
+                  <span className="block font-semibold">{d.name}</span>
+                  <span className="block text-ink-2">{day(d.date)}</span>
+                </Fact>
+              ))}
+            </ul>
+          ) : <p className="px-2 text-ink-2">No new diagnoses.</p>}
+        </Panel>
+        <Panel title="New documents" count={since.documents.length}>
+          {since.documents.length ? (
+            <ul>
+              {since.documents.map((d) => (
+                <li key={d.id}>
+                  <button type="button" onClick={() => onOpen({ id: d.id, quote: null, title: `${d.type_label}, ${d.facility ?? ""}` })} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-control px-2 text-left hover:bg-primary-soft">
+                    <span><span className="font-semibold">{d.facility ?? d.type_label}</span> <span className="text-ink-2">{d.type_label}</span></span>
+                    <span className="shrink-0 whitespace-nowrap text-meta font-semibold text-primary">{day(d.date)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="px-2 text-ink-2">No new documents.</p>}
+        </Panel>
+      </div>
+    </main>
   );
 }
 

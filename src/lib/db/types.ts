@@ -628,6 +628,8 @@ export type Database = {
           viewer_name: string;
           started_at: string;
           last_seen_at: string;
+          viewer_reg_no: string | null;
+          previous_visit_at: string | null;
         };
         Insert: {
           id?: string;
@@ -636,6 +638,8 @@ export type Database = {
           viewer_name: string;
           started_at?: string;
           last_seen_at?: string;
+          viewer_reg_no?: string | null;
+          previous_visit_at?: string | null;
         };
         Update: {
           id?: string;
@@ -644,6 +648,8 @@ export type Database = {
           viewer_name?: string;
           started_at?: string;
           last_seen_at?: string;
+          viewer_reg_no?: string | null;
+          previous_visit_at?: string | null;
         };
         Relationships: [
           { foreignKeyName: "viewer_sessions_share_link_id_fkey"; columns: ["share_link_id"]; isOneToOne: false; referencedRelation: "share_links"; referencedColumns: ["id"] },

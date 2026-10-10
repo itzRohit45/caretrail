@@ -26,6 +26,19 @@ export type Brief = {
   warnings: SafetyWarning[];
   recent_tests: RecentTest[];
   documents: BriefDocument[];
+  since_last_visit: SinceLastVisit | null;
+};
+
+/** FR-13: what is dated after this doctor's previous view (same name and registration number). */
+export type SinceLastVisit = {
+  at: string;
+  warnings: SafetyWarning[];
+  started: { brand: string; generic: string | null; detail: string; prescriber: string | null; date: string; source: Source }[];
+  changed: { brand: string; from: string; to: string; prescriber: string | null; date: string; source: Source }[];
+  stopped: { brand: string; generic: string | null; stopped_on: string; source: Source }[];
+  labs: { code: string; title: string; display: string; unit: string | null; date: string; previous: { display: string; date: string } | null; out_of_range: boolean; source: Source }[];
+  diagnoses: { name: string; date: string; source: Source }[];
+  documents: BriefDocument[];
 };
 
 const KEY_LABS: { code: string; title: string }[] = [
@@ -40,12 +53,12 @@ const KEY_LABS: { code: string; title: string }[] = [
 const CHRONIC = ["diabetes", "hypertension", "thyroid", "asthma", "cardiac"];
 const istDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(iso));
 
-export async function buildBrief(link: Row<"share_links">, patient: Row<"patients">): Promise<Brief> {
+export async function buildBrief(link: Row<"share_links">, patient: Row<"patients">, previousVisitAt: string | null = null): Promise<Brief> {
   const db = adminClient();
   const pid = patient.id;
   const [docsRes, medsRes, labsRes, condsRes, allergiesRes, rangesRes, validityRes] = await Promise.all([
     db.from("documents").select("id, type, doc_date, created_at, facility, doctor_name, condition_tags, extraction_status").eq("patient_id", pid).eq("upload_status", "uploaded"),
-    db.from("medications").select("*").eq("patient_id", pid).eq("active", true),
+    db.from("medications").select("*").eq("patient_id", pid),
     db.from("lab_results").select("*").eq("patient_id", pid),
     db.from("conditions").select("*").eq("patient_id", pid),
     db.from("allergies").select("substance, severity, reaction").eq("patient_id", pid),
@@ -73,9 +86,10 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
     : [{ data: [] }, { data: [] }];
   const classes = classesRes.data ?? [];
 
-  const meds = medsRes.data!.filter(
+  const medsInScope = medsRes.data!.filter(
     (m) => docById.has(m.source_document_id) && factInScope({ categories: categoriesFor(m.generics, classes), date: m.start_date }, scope, today),
   ) as (SafetyMed & Row<"medications">)[];
+  const meds = medsInScope.filter((m) => m.active);
   const labs = labsRes.data!.filter((l) => docById.has(l.source_document_id) && factInScope({ categories: labCategories(l.test_code), date: l.test_date }, scope, today));
   const conds = condsRes.data!.filter((c) => docById.has(c.source_document_id) && factInScope({ categories: c.category ? [c.category] : [], date: c.diagnosed_on }, scope, today));
 
@@ -85,6 +99,7 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
     allergies: allergiesRes.data!.map((a, i) => ({ id: `a${i}`, ...a })),
     interactions: (interactionsRes.data ?? []) as { generic_a: string; generic_b: string; severity: "major" | "moderate" | "minor" }[],
     classes,
+    audience: "doctor",
   });
 
   // Chronic conditions grouped by category ("T2DM", "Type 2 diabetes mellitus" are one condition).
@@ -122,6 +137,81 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
     }];
   });
 
+  const briefDoc = (d: (typeof docs)[number]): BriefDocument => ({ id: d.id, type: d.type, type_label: DOC_TYPE_LABELS[d.type as keyof typeof DOC_TYPE_LABELS] ?? "Record", date: docDate(d), facility: d.facility, doctor: d.doctor_name });
+
+  let since_last_visit: SinceLastVisit | null = null;
+  if (previousVisitAt) {
+    // Clinical dates (document, test, start, stop), compared with the day of the previous view.
+    const since = istDate(previousVisitAt);
+    const isNew = (date: string | null) => date !== null && date > since;
+    const dateOfDoc = (id: string) => docDate(docById.get(id)!);
+    const medDate = (m: SafetyMed) => m.start_date ?? dateOfDoc(m.source_document_id);
+    const medDetail = (m: SafetyMed) => [m.dose, decodeFrequency(m.frequency) ?? m.frequency].filter(Boolean).join(", ");
+    const medSource = (m: SafetyMed) => source(m.source_document_id, (m as Row<"medications">).source_text);
+
+    const started: SinceLastVisit["started"] = [];
+    const changed: SinceLastVisit["changed"] = [];
+    for (const g of groups) {
+      if (!isNew(medDate(g.current))) continue;
+      const before = g.history.find((h) => !isNew(medDate(h)));
+      if (!before) {
+        started.push({ brand: g.current.brand_name, generic: g.current.generic_name, detail: medDetail(g.current), prescriber: g.current.prescriber, date: medDate(g.current), source: medSource(g.current) });
+      } else if (medDetail(before) !== medDetail(g.current)) {
+        changed.push({ brand: g.current.brand_name, from: medDetail(before) || "not written", to: medDetail(g.current) || "not written", prescriber: g.current.prescriber, date: medDate(g.current), source: medSource(g.current) });
+      }
+    }
+    const stopped = medsInScope
+      .filter((m) => !m.active && isNew(m.stopped_on))
+      .map((m) => ({ brand: m.brand_name, generic: m.generic_name, stopped_on: m.stopped_on!, source: medSource(m) }));
+
+    const titles = new Map(KEY_LABS.map((k) => [k.code, k.title]));
+    const byDateDesc = (a: Row<"lab_results">, b: Row<"lab_results">) => b.test_date.localeCompare(a.test_date) || b.created_at.localeCompare(a.created_at);
+    const showLab = (l: Row<"lab_results">) => {
+      const dia = l.test_code === "BP_SYS" ? labs.find((x) => x.test_code === "BP_DIA" && x.source_document_id === l.source_document_id && x.test_date === l.test_date) : null;
+      return dia ? `${l.value_normalised ?? l.value}/${dia.value_normalised ?? dia.value}` : String(l.value_normalised ?? l.value ?? l.value_text ?? "");
+    };
+    const newLabCodes = [...new Set(labs.filter((l) => isNew(l.test_date) && l.test_code !== "BP_DIA").map((l) => l.test_code ?? l.test_name))];
+    const sinceLabs = newLabCodes
+      .map((code) => {
+        const rows = labs.filter((l) => (l.test_code ?? l.test_name) === code).sort(byDateDesc);
+        const last = rows[0];
+        const prev = rows.find((r) => !isNew(r.test_date));
+        const ref = last.test_code && last.test_code !== "BP_SYS" ? ranges.get(last.test_code) : null;
+        const v = last.value_normalised;
+        return {
+          code,
+          title: (last.test_code && titles.get(last.test_code)) ?? last.test_name,
+          display: showLab(last),
+          unit: last.unit_normalised ?? last.unit,
+          date: last.test_date,
+          previous: prev ? { display: showLab(prev), date: prev.test_date } : null,
+          out_of_range: ref && v !== null ? (ref.low !== null && v < ref.low) || (ref.high !== null && v > ref.high) : false,
+          source: source(last.source_document_id, last.source_text),
+        };
+      })
+      .sort((a, b) => Number(titles.has(b.code)) - Number(titles.has(a.code)) || b.date.localeCompare(a.date));
+
+    const condDate = (c: Row<"conditions">) => c.diagnosed_on ?? dateOfDoc(c.source_document_id);
+    const knownBefore = new Set(conds.filter((c) => !isNew(condDate(c))).map((c) => c.category ?? c.name.toLowerCase()));
+    const seenNames = new Set<string>();
+    const diagnoses = conds
+      .filter((c) => isNew(condDate(c)) && !knownBefore.has(c.category ?? c.name.toLowerCase()))
+      .sort((a, b) => condDate(b).localeCompare(condDate(a)))
+      .filter((c) => !seenNames.has(c.name.toLowerCase()) && Boolean(seenNames.add(c.name.toLowerCase())))
+      .map((c) => ({ name: c.name, date: condDate(c), source: source(c.source_document_id, c.source_text) }));
+
+    since_last_visit = {
+      at: previousVisitAt,
+      warnings: warnings.filter((w) => w.level !== "info" && w.items.some((i) => docById.has(i.documentId) && isNew(dateOfDoc(i.documentId)))),
+      started,
+      changed,
+      stopped,
+      labs: sinceLabs,
+      diagnoses,
+      documents: docs.filter((d) => isNew(docDate(d))).map(briefDoc).sort((a, b) => b.date.localeCompare(a.date)),
+    };
+  }
+
   const hospitalisations = docs
     .filter((d) => d.type === "discharge_summary")
     .map((d) => ({ date: docDate(d), facility: d.facility, diagnoses: conds.filter((c) => c.source_document_id === d.id).map((c) => c.name), source: source(d.id, null) }))
@@ -149,9 +239,8 @@ export async function buildBrief(link: Row<"share_links">, patient: Row<"patient
     hospitalisations,
     warnings,
     recent_tests: recentTests(labs, validityRes.data!, today),
-    documents: docs
-      .map((d) => ({ id: d.id, type: d.type, type_label: DOC_TYPE_LABELS[d.type as keyof typeof DOC_TYPE_LABELS] ?? "Record", date: docDate(d), facility: d.facility, doctor: d.doctor_name }))
-      .sort((a, b) => b.date.localeCompare(a.date)),
+    documents: docs.map(briefDoc).sort((a, b) => b.date.localeCompare(a.date)),
+    since_last_visit,
   };
 }
 

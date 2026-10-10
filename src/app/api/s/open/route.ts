@@ -1,4 +1,4 @@
-import { resolveShare, logAccess } from "@/lib/sharing/resolve";
+import { resolveShare, logAccess, previousVisit } from "@/lib/sharing/resolve";
 import { adminClient } from "@/lib/supabase/admin";
 import { openShareSchema } from "@/lib/schemas/shares";
 import { fail, invalid, ok } from "@/lib/api/respond";
@@ -23,12 +23,15 @@ export async function POST(request: Request) {
     }
   }
 
+  const { viewer_name, reg_no = null } = parsed.data;
+  // Looked up before this visit is logged, so "since your last visit" compares with the one before.
+  const previous_visit_at = reg_no ? await previousVisit(ctx.patient, viewer_name, reg_no) : null;
   const { data: session, error } = await admin
     .from("viewer_sessions")
-    .insert({ share_link_id: ctx.link.id, patient_id: ctx.patient.id, viewer_name: parsed.data.viewer_name })
+    .insert({ share_link_id: ctx.link.id, patient_id: ctx.patient.id, viewer_name, viewer_reg_no: reg_no, previous_visit_at })
     .select("id")
     .single();
   if (error) return fail(500, "Could not open the records. Please try again.");
-  await logAccess(ctx, { action: "opened", viewer_name: parsed.data.viewer_name });
+  await logAccess(ctx, { action: "opened", viewer_name, viewer_reg_no: reg_no });
   return ok({ session_id: session.id, expires_at: ctx.link.expires_at });
 }

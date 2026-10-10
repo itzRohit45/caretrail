@@ -84,6 +84,10 @@ for (const [key, p] of Object.entries(PATIENTS)) {
 await db.from("medications").update({ active: false, stopped_on: "2026-03-12" }).eq("patient_id", ids.ravi).ilike("brand_name", "%amlong%");
 await db.from("medications").update({ active: false, stopped_on: "2026-03-26" }).eq("patient_id", ids.ravi).ilike("brand_name", "%pantocid%");
 
+// Ravi's diabetologist last viewed his record at the 20 Aug 2026 visit (simulated, like every demo record),
+// so the sample doctor link can show "since your last view" (FR-13). Demo copies inherit it.
+await db.from("access_logs").insert({ patient_id: ids.ravi, viewer_name: "Dr. A. Suresh", viewer_reg_no: "TNMC 61234", viewer_hospital: "Suresh Diabetes & Wellness Clinic", action: "opened", created_at: "2026-08-20T06:30:00Z" });
+
 // Arun's emergency QR for the public demo link (the raw token lives only in .env.local / Vercel env).
 const token = newToken();
 await db.from("patients").update({ emergency_token_hash: hashToken(token), emergency_token_created_at: new Date().toISOString() }).eq("id", ids.arun);

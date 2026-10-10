@@ -63,8 +63,10 @@ const item = (m: SafetyMed): WarningItem => ({ medicationId: m.id, brand: m.bran
 const by = (m: SafetyMed) => (m.prescriber ? `${m.brand_name} (${m.prescriber})` : m.brand_name);
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export function safetyWarnings(input: { groups: MedGroup[]; allergies: SafetyAllergy[]; interactions: SafetyInteraction[]; classes: GenericClass[] }) {
+/** audience "doctor" words allergy warnings about the patient instead of to them. */
+export function safetyWarnings(input: { groups: MedGroup[]; allergies: SafetyAllergy[]; interactions: SafetyInteraction[]; classes: GenericClass[]; audience?: "patient" | "doctor" }) {
   const { groups, allergies, interactions, classes } = input;
+  const whose = input.audience === "doctor" ? ["the patient's", "The patient's"] : ["your", "Your"];
   const classOf = new Map(classes.map((c) => [c.generic, c.drug_class?.toLowerCase() ?? null]));
   const warnings: SafetyWarning[] = [];
   const current = groups.map((g) => g.current);
@@ -80,8 +82,8 @@ export function safetyWarnings(input: { groups: MedGroup[]; allergies: SafetyAll
         id: `allergy:${a.id}:${m.id}`,
         kind: "allergy",
         level: "severe",
-        title: `${m.brand_name} may clash with your ${a.substance} allergy`,
-        detail: `${m.brand_name} contains ${hit}${viaClass ? `, which belongs to the ${classOf.get(hit)} group` : ""}. Prescribed by ${m.prescriber ?? "a doctor"}. Your allergy is recorded as ${a.severity}.`,
+        title: `${m.brand_name} may clash with ${whose[0]} ${a.substance} allergy`,
+        detail: `${m.brand_name} contains ${hit}${viaClass ? `, which belongs to the ${classOf.get(hit)} group` : ""}. Prescribed by ${m.prescriber ?? "a doctor"}. ${whose[1]} allergy is recorded as ${a.severity}.`,
         items: [item(m)],
       });
     }
