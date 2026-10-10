@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus } from "@phosphor-icons/react/ssr";
+import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus, WarningOctagon, Warning, Pill, Receipt } from "@phosphor-icons/react/ssr";
 import { requirePatient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageBody, PageHeader, SheetSection } from "@/components/ui/page";
@@ -11,6 +11,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { RangeLine } from "@/components/ui/range-line";
 import { loadTrends, type TrendPoint } from "@/lib/records/trends";
 import { formatDate } from "@/lib/format";
+import { loadMedicines, loadTestSaver } from "@/lib/safety/load";
+import { SAFETY_NOTE } from "@/lib/safety/engine";
+import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -32,6 +35,10 @@ export default async function HomePage() {
       .order("created_at", { ascending: false })
       .limit(6),
   ]);
+  const [meds, saver] = await Promise.all([loadMedicines(supabase, patient.id), loadTestSaver(supabase, patient.id)]);
+  const urgent = meds.warnings.filter((w) => w.level !== "info");
+  const doctors = new Set(meds.groups.map((g) => g.current.prescriber).filter(Boolean)).size;
+  const validTests = saver.tests.filter((t) => t.valid);
   const latest = (await loadTrends(supabase, patient.id))
     .filter((t) => t.key !== "BP" && t.points.length > 0)
     .map((t) => ({ trend: t, point: t.points.at(-1) as TrendPoint }))
@@ -62,6 +69,57 @@ export default async function HomePage() {
         }
       />
       <PageBody>
+        {urgent.length ? (
+          <section aria-labelledby="warn-title" className={cn("rounded-card border p-5 sm:p-6", urgent.some((w) => w.level === "severe") ? "border-severe-rule bg-severe-soft" : "border-rule bg-sheet")}>
+            <h2 id="warn-title" className="flex items-center gap-2 text-title font-bold">
+              {urgent.some((w) => w.level === "severe") ? <WarningOctagon aria-hidden weight="fill" className="size-6 text-severe" /> : <Warning aria-hidden weight="fill" className="size-6" />}
+              {urgent.length === 1 ? "1 medicine warning" : `${urgent.length} medicine warnings`}
+            </h2>
+            <ul className="mt-3 space-y-1.5">
+              {urgent.slice(0, 3).map((w) => (
+                <li key={w.id} className={cn("font-semibold", w.level === "severe" ? "text-severe" : "text-ink")}>
+                  {w.title}
+                </li>
+              ))}
+              {urgent.length > 3 ? <li className="text-ink-2">and {urgent.length - 3} more</li> : null}
+            </ul>
+            <p className="mt-3 text-dense text-ink-2">{SAFETY_NOTE}</p>
+            <Link href="/medicines" className={buttonClass("secondary", "dense", "mt-4")}>
+              Review medicines <CaretRight aria-hidden className="size-4" />
+            </Link>
+          </section>
+        ) : null}
+
+        {meds.groups.length || validTests.length ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Link href="/medicines" className="rounded-card border border-rule bg-sheet p-5 transition-colors duration-150 hover:border-rule-strong">
+              <p className="flex items-center gap-2 font-bold"><Pill aria-hidden weight="duotone" className="size-5 text-primary" /> Taking now</p>
+              <p className="mt-2 font-serif text-display font-medium tabular-nums">{meds.groups.length}</p>
+              <p className="text-ink-2">{meds.groups.length === 1 ? "medicine" : "medicines"}{doctors ? ` from ${doctors} ${doctors === 1 ? "doctor" : "doctors"}` : ""}</p>
+            </Link>
+            <section aria-labelledby="saver-title" className="rounded-card border border-rule bg-sheet p-5">
+              <h2 id="saver-title" className="flex items-center gap-2 font-bold"><Receipt aria-hidden weight="duotone" className="size-5 text-primary" /> Tests still valid</h2>
+              {validTests.length ? (
+                <>
+                  <p className="mt-2 font-serif text-display font-medium tabular-nums">About ₹{saver.validValueInr.toLocaleString("en-IN")}</p>
+                  <p className="text-ink-2">of recent tests you may not need to repeat yet. Show these reports before re-testing.</p>
+                  <ul className="mt-3 space-y-1 text-dense">
+                    {validTests.slice(0, 3).map((t) => (
+                      <li key={t.code}>
+                        <Link href={`/records/${t.documentId}`} className="font-semibold text-primary hover:underline">{t.name}</Link>
+                        <span className="text-ink-2">, {t.daysAgo} days ago, next due {formatDate(t.nextDue)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-meta text-ink-3">Estimate from typical Chennai lab prices.</p>
+                </>
+              ) : (
+                <p className="mt-2 text-ink-2">None right now. Recent lab reports appear here with the date they are next due.</p>
+              )}
+            </section>
+          </div>
+        ) : null}
+
         {waiting.length ? (
           <section aria-labelledby="waiting-title" className="rounded-card border border-verify-rule bg-verify-soft p-5 sm:p-6">
             <h2 id="waiting-title" className="text-title font-bold text-ink">

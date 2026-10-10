@@ -52,6 +52,7 @@ Everything below was used to build CareTrail. No real patient data is used anywh
 | Atkinson Hyperlegible Next / Mono (Braille Institute) and Source Serif 4 (Adobe), via Google Fonts | Body type chosen for low-vision readers; serif for headings and numbers |
 | Kalam (Google Fonts) | Handwriting style used only when generating the simulated demo prescriptions |
 | Photo by Wilfred Sequeira on Unsplash (Unsplash License) | Landing page portrait |
+| DDInter drug-drug interaction dataset (Xiong et al., Nucleic Acids Research 2022, ddinter.scbdd.com) | Interaction pairs and severity, filtered to the 55 curated generics (293 pairs); free for academic, non-commercial use |
 | Brand-to-generic map and test validity table | Hand-curated for this demo from publicly known Indian brand names and typical lab practice; not a clinical database |
 | Vercel | Hosting |
 | `pg` (dev) | Migration runner and type generator scripts |

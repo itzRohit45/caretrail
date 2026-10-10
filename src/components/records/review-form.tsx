@@ -131,7 +131,7 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
         duration_days: m.duration_days && m.duration_days > 0 ? Math.round(m.duration_days) : null,
         source_text: m.source_text,
         confidence: m.confidence,
-        patient_verified: m.manual || m.reasons.length > 0 || changed(m, ["brand_name", "dose", "frequency", "duration_days"]),
+        patient_verified: m.manual || changed(m, ["brand_name", "dose", "frequency", "duration_days"]),
       })),
       lab_results: keep(labs).map((l) => ({
         test_name: l.test_name.trim(),
@@ -141,13 +141,13 @@ export function ReviewForm({ model }: { model: ReviewModel }) {
         test_date: l.test_date || null,
         source_text: l.source_text,
         confidence: l.confidence,
-        patient_verified: l.manual || l.reasons.length > 0 || changed(l, ["test_name", "value", "unit", "test_date"]),
+        patient_verified: l.manual || changed(l, ["test_name", "value", "unit", "test_date"]),
       })),
       conditions: keep(conds).map((c) => ({
         name: c.name.trim(),
         source_text: c.source_text,
         confidence: c.confidence,
-        patient_verified: c.manual || c.reasons.length > 0 || changed(c, ["name"]),
+        patient_verified: c.manual || changed(c, ["name"]),
       })),
     };
     const blank =
