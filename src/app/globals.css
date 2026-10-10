@@ -196,3 +196,19 @@
     }
   }
 }
+
+/* Printing from the emergency card page prints only the wallet card, at real size. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #wallet-card,
+  #wallet-card * {
+    visibility: visible;
+  }
+  #wallet-card {
+    position: absolute;
+    top: 12mm;
+    left: 12mm;
+  }
+}

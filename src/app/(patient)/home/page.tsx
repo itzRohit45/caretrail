@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus, WarningOctagon, Warning, Pill, Receipt } from "@phosphor-icons/react/ssr";
+import { CheckCircle, CircleDashed, CaretRight, PencilSimple, Plus, WarningOctagon, Warning, Pill, Receipt, QrCode, Siren } from "@phosphor-icons/react/ssr";
+import { formatDateTime } from "@/lib/format";
 import { requirePatient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageBody, PageHeader, SheetSection } from "@/components/ui/page";
@@ -16,6 +17,8 @@ import { SAFETY_NOTE } from "@/lib/safety/engine";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = { title: "Home" };
+
+const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 
 function greeting() {
   const hour = Number(new Intl.DateTimeFormat("en-IN", { hour: "numeric", hourCycle: "h23", timeZone: "Asia/Kolkata" }).format(new Date()));
@@ -43,6 +46,14 @@ export default async function HomePage() {
     .filter((t) => t.key !== "BP" && t.points.length > 0)
     .map((t) => ({ trend: t, point: t.points.at(-1) as TrendPoint }))
     .slice(0, 3);
+  const { data: scans } = await supabase
+    .from("access_logs")
+    .select("created_at")
+    .eq("patient_id", patient.id)
+    .eq("action", "emergency_scan")
+    .gte("created_at", hoursAgo(24))
+    .order("created_at", { ascending: false })
+    .limit(1);
   const waiting = (docs ?? []).filter((d) => d.extraction_status === "needs_review" || d.extraction_status === "failed");
 
   const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
@@ -69,6 +80,15 @@ export default async function HomePage() {
         }
       />
       <PageBody>
+        {scans?.length ? (
+          <Link href="/sharing/history" className="flex items-start gap-3 rounded-card border border-rule-strong bg-sheet p-4">
+            <Siren aria-hidden weight="fill" className="mt-0.5 size-6 shrink-0" />
+            <span>
+              <span className="block font-bold">Your emergency card was scanned at {formatDateTime(scans[0].created_at)}</span>
+              <span className="block text-dense text-ink-2">If this was not expected, open your emergency card and make a new QR.</span>
+            </span>
+          </Link>
+        ) : null}
         {urgent.length ? (
           <section aria-labelledby="warn-title" className={cn("rounded-card border p-5 sm:p-6", urgent.some((w) => w.level === "severe") ? "border-severe-rule bg-severe-soft" : "border-rule bg-sheet")}>
             <h2 id="warn-title" className="flex items-center gap-2 text-title font-bold">
@@ -241,6 +261,10 @@ export default async function HomePage() {
             }
           >
             <EmergencyPreview patient={patient} allergies={allergies ?? []} />
+            <Link href="/emergency-card" className={buttonClass(patient.emergency_token_hash ? "secondary" : "primary", "dense", "mt-4")}>
+              <QrCode aria-hidden weight="bold" className="size-5" />
+              {patient.emergency_token_hash ? "Emergency QR" : "Set up emergency QR"}
+            </Link>
           </SheetSection>
         </div>
       </PageBody>
